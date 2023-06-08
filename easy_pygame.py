@@ -276,8 +276,11 @@ class Sprite(pygame.sprite.Sprite):
         if AUTO_UPDATE:
             update()
         
-    def flip(self, x=False, y=False):
-        self.image = pygame.transform.flip(self.orig_image, x, y)
+    def flip(self, x=False, y=False, orig=True):
+        if orig:
+            self.image = pygame.transform.flip(self.orig_image, x, y)
+        else:
+            self.image = pygame.transform.flip(self.image, x, y)
         if AUTO_UPDATE:
             update()
 
