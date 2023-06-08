@@ -4,8 +4,8 @@ import pygame as pg
 from fighter import Fighter
 
 epg.AUTO_UPDATE = False
-SCREEN_HEIGHT = 970
-SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = epg.HEIGHT = 970
+SCREEN_WIDTH = epg.WIDTH = 1280
 FPS = 30
 BALL_IMAGE_PATH = 'photos/ball.png'
 EARTH_IMAGE_PATH = 'photos/earth.png'
@@ -17,6 +17,8 @@ epg.AUTO_UPDATE = False
 GRAVITY = 2
 EARTH = 716
 
+FIGHTER_IMAGE_PATH = 'C:\\Users\\Akula\\Desktop\\pytho\\Pygame\\wed_fighting\\photos\\fighter.png'
+
 def update():
     epg.update()
     if epg.close_window():
@@ -25,18 +27,23 @@ def update():
     
 
 screen = epg.Screen(EARTH_IMAGE_PATH, width=SCREEN_WIDTH, height=SCREEN_HEIGHT)
-fighter1 = Fighter(x_pos=80,
+fighter1 = Fighter(img=FIGHTER_IMAGE_PATH,
+                   x_pos=80,
+                   flip = False,
                    wigth=120, 
                    height=280,
                    ground_level=EARTH,
-                   gravity=GRAVITY
+                   gravity=GRAVITY,
+                   id=0
                    )
 
 fighter2 = Fighter(x_pos=300,
+                   flip = True,
                    wigth=120, 
                    height=280,
                    ground_level=EARTH,
-                   gravity=GRAVITY
+                   gravity=GRAVITY,
+                   id=1
                    )
 
 
@@ -46,11 +53,11 @@ horiz_speed = 0
 fighter1.fights(fighter2)
 
 def main():
-    while True:
+    while fighter1.health_bar.value > 0 and fighter2.health_bar.value > 0:
         fighter1.moving()
         update()
-        if fighter1.knife:
-            fighter1.knife.kill()
+        #if fighter1.knife:
+            #fighter1.knife.kill()
         
 
 main()
