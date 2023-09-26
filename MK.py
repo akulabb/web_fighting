@@ -36,7 +36,7 @@ server = connection.Conection(SERVER, PORT)
 
 x_pos, ground_level = server.get_start()
 
-print(x_pos, ground_level)
+#print(x_pos, ground_level)
 
 fighter1 = Fighter(img=FIGHTER_IMAGE_PATH,
                    x_pos=x_pos,

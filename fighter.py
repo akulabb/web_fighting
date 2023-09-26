@@ -58,7 +58,7 @@ class Fighter(epg.Sprite):
         
         pos_x = self.pos[0] + dx
         pos_y = self.pos[1] + dy
-        return {'coord' : (pos_x, pos_y),
+        return {'coords' : (pos_x, pos_y),
                 'health' : self.health_bar.value,
                 }
             
@@ -83,7 +83,7 @@ class Fighter(epg.Sprite):
         
     def flip_skins(self, flipped):
         if self.skins_dir is not flipped:
-            print(903)
+            #print(903)
             self.flip(orig=False, x=True)
             self.skins_dir = flipped
     
@@ -115,8 +115,9 @@ class Fighter(epg.Sprite):
         return options
     
     def moving(self, game_state):
+        #print(game_state.get('coords'))
         self.move_to(game_state.get('coords'))
-        self.update_health(game_state.get('health'))
+        self.health_bar.set_value(game_state.get('health'))
 
 
 class HealthBar(epg.Label):
