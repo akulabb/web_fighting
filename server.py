@@ -4,6 +4,15 @@ import time
 import json
 
 
+SCREEN_HEIGHT = 970
+SCREEN_WIDTH = 1280
+GROUND_LEVEL = SCREEN_HEIGHT - 254
+START_POSITIONS = (int(SCREEN_WIDTH / 5), 
+                   int(SCREEN_WIDTH - SCREEN_WIDTH / 5),
+                   int(SCREEN_WIDTH / 5 * 2),
+                   int(SCREEN_WIDTH / 5 * 3)
+                   )
+
 SERVER = 'localhost'
 PORT = 5555
 
@@ -27,11 +36,11 @@ def remove_player(id):
 def fighter(id):
 	fighter_socket = players[id]
 	print('Игрок создан с id : ', id)
-	x_pos = 0
-	y_pos = 716
+	x_pos = START_POSITIONS[id]
+	y_pos = GROUND_LEVEL
 	start_pos = json.dumps((x_pos, y_pos))
 	fighter_socket.send(start_pos.encode())
-	time.sleep(3)
+	time.sleep(30)
 	remove_player(id)
 
 

@@ -69,10 +69,12 @@ fighter1.fights(fighter2)
 
 def main():
     while fighter1.health_bar.value > 0 and fighter2.health_bar.value > 0:
-        fighter1.moving()
+        options = fighter1.check_options()
+        game_state = fighter1.get_game_state(options)
+        fighter1.moving(game_state)
         update()
-        #if fighter1.knife:
-            #fighter1.knife.kill()
+        
+
         
 
 main()

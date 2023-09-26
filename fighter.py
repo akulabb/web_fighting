@@ -22,27 +22,25 @@ class Fighter(epg.Sprite):
         self.enemy = None
         self.id = id
         self.health_bar = HealthBar(id=self.id, health=100)
+        self.speed = 10
         
     def fights(self, enemy):
         self.enemy = enemy
         
-    def moving(self):
+    def get_game_state(self, options):
     
         dx = 0
         dy = 0
         # controling
-        keystate = pygame.key.get_pressed()
-        if keystate[pygame.K_a]:
-            dx -= 10
-            self.flip_skins(LEFT)
-        if keystate[pygame.K_d]:
-            dx += 10
-            self.flip_skins(RIGHT)
-        if keystate[pygame.K_SPACE] and not self.jumping:
+        if options.get('jump') == True and not self.jumping:
             self.fall_speed = -30
             self.jumping = True
-        if keystate[pygame.K_e]:
+        if options.get('hit') == True:
             self.attack()
+        options.get('jump') == True
+        dx += options.get('move')
+        self.flip_skins(options.get('direction'))
+        #print(options.get('direction'))
         
         # gravitation
         self.fall_speed += self.gravity
@@ -57,12 +55,14 @@ class Fighter(epg.Sprite):
             dy -= self.rect.bottom + dy - self.ground_level
             self.fall_speed = 0
             self.jumping = False
-            
+        
         pos_x = self.pos[0] + dx
         pos_y = self.pos[1] + dy
-        #self.move(RIGHT, dx)
-        #self.move(DOWN, dy)
-        self.move_to((pos_x, pos_y))
+        return {'coord' : (pos_x, pos_y),
+                'health' : self.health_bar.value,
+                }
+            
+
     
     def attack(self, ):
         attack_dist = self.size[0]
@@ -83,12 +83,40 @@ class Fighter(epg.Sprite):
         
     def flip_skins(self, flipped):
         if self.skins_dir is not flipped:
+            print(903)
             self.flip(orig=False, x=True)
             self.skins_dir = flipped
     
     
     def update_health(self, health):
         self.health_bar.set_value(self.health_bar.value + health)
+        
+        
+    
+    def check_options(self, ):
+        options = {'move' : 0,
+                   'direction' : self.skins_dir,
+                   'jump' : False,
+                   'hit' : False,
+                    }
+                    
+        keystate = pygame.key.get_pressed()
+                    
+        if keystate[pygame.K_a]:
+            options['direction'] = LEFT
+            options['move'] = -self.speed
+        if keystate[pygame.K_d]:
+            options['direction'] = RIGHT
+            options['move'] = self.speed
+        if keystate[pygame.K_SPACE]:
+            options['jump'] = True
+        if keystate[pygame.K_e]:
+            options['hit'] = True
+        return options
+    
+    def moving(self, game_state):
+        self.move_to(game_state.get('coords'))
+        self.update_health(game_state.get('health'))
 
 
 class HealthBar(epg.Label):
@@ -107,3 +135,5 @@ class HealthBar(epg.Label):
         pygame.draw.rect(surface, epg.RED, (2, 2, self.WIDTH, self.HEIGHT))
         pygame.draw.rect(surface, epg.YELLOW, (2, 2, self.value * raito, self.HEIGHT))
         return surface
+        
+                          
