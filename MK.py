@@ -71,6 +71,7 @@ def main():
     while fighter1.health_bar.value > 0 and fighter2.health_bar.value > 0:
         options = fighter1.check_options()
         game_state = fighter1.get_game_state(options)
+        server.send(options)
         fighter1.moving(game_state)
         update()
         

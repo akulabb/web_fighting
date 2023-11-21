@@ -16,4 +16,13 @@ class Conection :
             print('connection error : ', err)
         return coord
     
+    def send(self, data):
+        try:
+            str_options = json.dumps(data)
+            byte_options = str_options.encode()
+            self.server.send(byte_options)
+#            response = self.server.recv(1024)
+        except Exception as err:
+            print('connection error : ', err)
+    
     

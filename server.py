@@ -34,14 +34,22 @@ def remove_player(id):
 
 
 def fighter(id):
-	fighter_socket = players[id]
-	print('Игрок создан с id : ', id)
-	x_pos = START_POSITIONS[id]
-	y_pos = GROUND_LEVEL
-	start_pos = json.dumps((x_pos, y_pos))
-	fighter_socket.send(start_pos.encode())
-	time.sleep(30)
-	remove_player(id)
+    fighter_socket = players[id]
+    print('Игрок создан с id : ', id)
+    x_pos = START_POSITIONS[id]
+    y_pos = GROUND_LEVEL
+    start_pos = json.dumps((x_pos, y_pos))
+    fighter_socket.send(start_pos.encode())
+    while True:
+        try:
+            raw_options = fighter_socket.recv(1024)
+            str_options = raw_options.decode()
+            options = json.loads(str_options)
+            print('options:', options)
+        except Exception as err:
+            print('Потерянно соеденение с : ', id, 'игрок отключился')
+            break
+    remove_player(id)
 
 
 while True:

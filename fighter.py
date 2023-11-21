@@ -37,7 +37,7 @@ class Fighter(epg.Sprite):
             self.jumping = True
         if options.get('hit') == True:
             self.attack()
-        options.get('jump') == True
+#        options.get('jump') == True
         dx += options.get('move')
         self.flip_skins(options.get('direction'))
         #print(options.get('direction'))
@@ -112,6 +112,7 @@ class Fighter(epg.Sprite):
             options['jump'] = True
         if keystate[pygame.K_e]:
             options['hit'] = True
+#        print(options)
         return options
     
     def moving(self, game_state):
