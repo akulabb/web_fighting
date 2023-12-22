@@ -16,6 +16,10 @@ START_POSITIONS = (int(SCREEN_WIDTH / 5),
 SERVER = 'localhost'
 PORT = 5555
 
+PLAYER_SIZE = (280, 180)
+
+GRAVITY = 2
+
 start_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 start_socket.bind((SERVER, PORT))
 start_socket.listen(2)
@@ -27,39 +31,108 @@ players = {0 : None,
 		   3 : None,
 		   }
 
+
+class Player:
+    def __init__(self, id, socket, gravity):
+        self.id = id
+        self.y_pos = GROUND_LEVEL - PLAYER_SIZE[1] / 2
+        self.rect = Rect(PLAYER_SIZE, 
+                         START_POSITIONS[self.id], 
+                         self.y_pos
+                         )
+        self.socket = socket
+        self.fall_speed = 0
+        self.jumping = false
+        self.gravity = gravity
+        
+    def get_game_state(self, options):
+    
+        dx = 0
+        dy = 0
+        # controling
+        if options.get('jump') == True and not self.jumping:
+            self.fall_speed = -30
+            self.jumping = True
+#        if options.get('hit') == True:
+ #           self.attack()
+        dx += options.get('move')
+#        self.flip_skins(options.get('direction'))
+        #print(options.get('direction'))
+        
+        # gravitation
+        self.fall_speed += self.gravity
+        dy = self.fall_speed
+        
+        # удержание спрайта в пределах экрана
+        if self.rect.left + dx < 0:
+            dx = -self.rect.left
+        elif self.rect.right + dx > SCREEN_WIDTH:
+            dx = SCREEN_WIDTH - self.rect.right
+        if self.rect.bottom + dy > GROUND_LEVEL:
+            dy -= self.rect.bottom + dy - GROUND_LEVEL
+            self.fall_speed = 0
+            self.jumping = False
+        
+        pos_x = self.rect.center_x + dx
+        pos_y = self.rect.center_y + dy
+        self.rect.update(pos_x, pos_y)
+        return {'coords' : (pos_x, pos_y),
+                'health' : self.health_bar.value,
+                } 
+        
+        
+    
+
+class Rect:
+    def __init__(self, size, center_x, center_y, ):
+        self.wigth, self.height = size
+        self.center_x = center_x
+        self.center_y = center_y
+        self.update(center_x, center_y)
+    
+    def update(self, center_x, center_y):
+        self.top = center_x + self.height / 2
+        self.bottom = center_x - self.height / 2
+        self.right = center_y + self.wigth / 2
+        self.left = center_y - self.wigth / 2
+        self.center_x = center_x
+        self.center_y = center_y    
+
 def remove_player(id):
 	players[id].close()
 	players[id] = None
 	print('игрок закончился с id : ', id)
 
 
-def fighter(id):
-    fighter_socket = players[id]
-    print('Игрок создан с id : ', id)
-    x_pos = START_POSITIONS[id]
-    y_pos = GROUND_LEVEL
-    start_pos = json.dumps((x_pos, y_pos))
-    fighter_socket.send(start_pos.encode())
+def fighter(player):
+    print('Игрок создан с id : ', player.id)
+    start_pos = json.dumps((player.rect.center_x, 
+                            player.rect.center_y, 
+                            player.rect.wigth, 
+                            player.rect.height
+                            ))
+    player.socket.send(start_pos.encode())
     while True:
         try:
-            raw_options = fighter_socket.recv(1024)
+            raw_options = player.socket.recv(1024)
             str_options = raw_options.decode()
             options = json.loads(str_options)
-            print('options:', options)
+            #print('options:', options)
         except Exception as err:
-            print('Потерянно соеденение с : ', id, 'игрок отключился')
+            print('Потерянно соеденение с : ', player.id, 'игрок отключился')
             break
-    remove_player(id)
+    remove_player(player.id)
 
 
 while True:
-	player_socket, adress = start_socket.accept()
-	print('Подключился игрок с адресом : ', adress)
-	for id, player in players.items():
-		if not player:
-			players[id] = player_socket
-			threading.Thread(target=fighter, args=(id,)).start()
-			break
-	else:
-		print('Максимальное кичество игроков')
-		player_socket.close()
+    player_socket, adress = start_socket.accept()
+    print('Подключился игрок с адресом : ', adress)
+    for id, player in players.items():
+        if not player:
+            players[id] = player_socket
+            player = Player(id, player_socket, GRAVITY)
+            threading.Thread(target=fighter, args=(player,)).start()
+            break
+    else:
+        print('Максимальное кичество игроков')
+        player_socket.close()

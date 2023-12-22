@@ -34,24 +34,28 @@ screen = epg.Screen(EARTH_IMAGE_PATH, width=SCREEN_WIDTH, height=SCREEN_HEIGHT)
 
 server = connection.Conection(SERVER, PORT)
 
-x_pos, ground_level = server.get_start()
+x_pos, y_pos, player_wigth, player_height = server.get_start()
 
 #print(x_pos, ground_level)
 
+ground_level = SCREEN_HEIGHT - 254
+
 fighter1 = Fighter(img=FIGHTER_IMAGE_PATH,
                    x_pos=x_pos,
+                   y_pos=y_pos,
                    flip = False,
-                   wigth=120, 
-                   height=280,
+                   wigth=player_wigth, 
+                   height=player_height,
                    ground_level=ground_level,
                    gravity=GRAVITY,
                    id=0
                    )
 
 fighter2 = Fighter(x_pos=300,
+                   y_pos=y_pos,
                    flip = True,
-                   wigth=120, 
-                   height=280,
+                   wigth=player_wigth, 
+                   height=player_height,
                    ground_level=ground_level,
                    gravity=GRAVITY,
                    id=1
