@@ -34,32 +34,30 @@ screen = epg.Screen(EARTH_IMAGE_PATH, width=SCREEN_WIDTH, height=SCREEN_HEIGHT)
 
 server = connection.Conection(SERVER, PORT)
 
-x_pos, y_pos, player_wigth, player_height = server.get_start()
-
-#print(x_pos, ground_level)
-
 ground_level = SCREEN_HEIGHT - 254
 
-fighter1 = Fighter(img=FIGHTER_IMAGE_PATH,
-                   x_pos=x_pos,
-                   y_pos=y_pos,
-                   flip = False,
-                   wigth=player_wigth, 
-                   height=player_height,
-                   ground_level=ground_level,
-                   gravity=GRAVITY,
-                   id=0
-                   )
+start_game_state = server.get_start()
+current_fighter_id = start_game_state.pop('current_player_id')
 
-fighter2 = Fighter(x_pos=300,
-                   y_pos=y_pos,
-                   flip = True,
-                   wigth=player_wigth, 
-                   height=player_height,
-                   ground_level=ground_level,
-                   gravity=GRAVITY,
-                   id=1
-                   )
+fighters = []
+
+for id, player_pos in start_game_state.items():
+    x_pos, y_pos, wigth, height = player_pos
+    fighters.append(Fighter(img=FIGHTER_IMAGE_PATH,
+                    x_pos=x_pos,
+                    y_pos=y_pos,
+                    flip = False,
+                    wigth=player_wigth, 
+                    height=player_height,
+                    ground_level=ground_level,
+                    gravity=GRAVITY,
+                    id=id
+                    )
+
+
+
+    
+
 
 
 
@@ -68,14 +66,16 @@ fighter2 = Fighter(x_pos=300,
 fall_speed = 0
 horiz_speed = 0
 
-fighter1.fights(fighter2)
+#fighter1.fights(fighter2)
 
 
 def main():
-    while fighter1.health_bar.value > 0 and fighter2.health_bar.value > 0:
-        options = fighter1.check_options()
-        game_state = fighter1.get_game_state(options)
-        server.send(options)
+    while len(fighters) > 1:
+        for fighter in fighters:
+            if fighter.id == current_fighter_id:
+                options = fighter.check_options()
+                game_state = server.get_game_state(options)
+                server.send(options)
         fighter1.moving(game_state)
         update()
         
