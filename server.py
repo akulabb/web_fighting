@@ -35,6 +35,7 @@ players = {0 : None,
 class Player:
     def __init__(self, id, socket, gravity):
         self.id = id
+        self.health = 100
         self.y_pos = GROUND_LEVEL - PLAYER_SIZE[1] / 2
         self.rect = Rect(PLAYER_SIZE, 
                          START_POSITIONS[self.id], 
@@ -45,7 +46,7 @@ class Player:
         self.jumping = false
         self.gravity = gravity
         
-    def get_game_state(self, options):
+    def apply_options(self, options):
     
         dx = 0
         dy = 0
@@ -80,7 +81,8 @@ class Player:
                 'health' : self.health_bar.value,
                 } 
         
-        
+    def get_self_state(self):
+        return (self.rect.center_x, self.rect.center_y, self.health)
     
 
 class Rect:
@@ -104,33 +106,47 @@ def remove_player(id):
 	print('игрок закончился с id : ', id)
 
 
-def fighter(player):
-    print('Игрок создан с id : ', player.id)
-    start_pos = json.dumps((player.rect.center_x, 
-                            player.rect.center_y, 
-                            player.rect.wigth, 
-                            player.rect.height
-                            ))
-    player.socket.send(start_pos.encode())
-    while True:
+def fighter(current_player):
+    print('Игрок создан с id : ', current_player.id)
+    start_state = {'current_player_id' : current_player.id}
+    for id, player in players.items():
+        if player:
+            start_state[id] = (player.rect.center_x, 
+                               player.rect.center_y, 
+                               player.rect.wigth, 
+                               player.rect.height,
+                               )
+    current_player.socket.send(start_state).encode()
+    while True:                                                 #главный цикл игры
         try:
-            raw_options = player.socket.recv(1024)
+            raw_options = current_player.socket.recv(1024)
             str_options = raw_options.decode()
             options = json.loads(str_options)
-            #print('options:', options)
+            #print('options:', options)   # TODO: получить game_state от всех игроков и отправить в клиент
         except Exception as err:
-            print('Потерянно соеденение с : ', player.id, 'игрок отключился')
+            print('Потерянно соеденение с : ', current_player.id, 'игрок отключился')
             break
-    remove_player(player.id)
+        current_player.apply_options(options)
+        players_state = {}
+        for id, player in players.items():
+            players_state[id] = player.get_self_state()
+        players_state
+        try:
+            str_players_state = json.dumps(data)
+            byte_players_state = str_players_state.encode()
+            self.socket.send(byte_players_state)
+        except Exception as err:
+            print('connection error : ', err)
+    remove_player(current_player.id)
 
 
 while True:
     player_socket, adress = start_socket.accept()
     print('Подключился игрок с адресом : ', adress)
-    for id, player in players.items():
-        if not player:
-            players[id] = player_socket
+    for id, player_in_slot in players.items():
+        if not player_in_slot:
             player = Player(id, player_socket, GRAVITY)
+            players[id] = player
             threading.Thread(target=fighter, args=(player,)).start()
             break
     else:
