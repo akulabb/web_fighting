@@ -8,13 +8,22 @@ class Conection :
         self.server.connect((server, port))
 
     def get_start(self):
+        return self.recv()
+    
+    def get_game_state(self):
+        self.send(options)
+        game_state = self.recv()
+        return game_state
+    
+    def recv(self, ):
         try:
             response = self.server.recv(1024)
-            coord = response.decode()
-            coord = json.loads(coord)
+            data = response.decode()
+            str_data = json.loads(data) 
         except Exception as err:
             print('connection error : ', err)
-        return coord
+        return data
+
     
     def send(self, data):
         try:
