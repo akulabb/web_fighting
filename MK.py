@@ -3,6 +3,7 @@ from easy_pygame import UP, DOWN, LEFT, RIGHT
 import pygame as pg
 from fighter import Fighter
 import connection
+import os
 
 epg.AUTO_UPDATE = False
 SCREEN_HEIGHT = epg.HEIGHT = 970
@@ -18,7 +19,8 @@ epg.AUTO_UPDATE = False
 GRAVITY = 2
 #EARTH = 716
 
-FIGHTER_IMAGE_PATH = 'C:\\Users\\Akula\\Desktop\\pytho\\Pygame\\wed_fighting\\photos\\fighter.png'
+PROJECT_DIR = os.getcwd()
+FIGHTER_IMAGE_PATH = os.path.join(PROJECT_DIR, 'photos\\fighter.png')
 
 SERVER = 'localhost'
 PORT = 5555
@@ -47,11 +49,11 @@ for id, player_pos in start_game_state.items():
                     x_pos=x_pos,
                     y_pos=y_pos,
                     flip = False,
-                    wigth=player_wigth, 
-                    height=player_height,
+                    wigth=wigth, 
+                    height=height,
                     ground_level=ground_level,
                     gravity=GRAVITY,
-                    id=id
+                    id=int(id)
                     ))
 
 
