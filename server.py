@@ -43,7 +43,7 @@ class Player:
                          )
         self.socket = socket
         self.fall_speed = 0
-        self.jumping = false
+        self.jumping = False
         self.gravity = gravity
         
     def apply_options(self, options):
@@ -101,7 +101,7 @@ class Rect:
         self.center_y = center_y    
 
 def remove_player(id):
-	players[id].close()
+	players[id].socket.close()
 	players[id] = None
 	print('игрок закончился с id : ', id)
 
@@ -116,7 +116,8 @@ def fighter(current_player):
                                player.rect.wigth, 
                                player.rect.height,
                                )
-    current_player.socket.send(start_state).encode()
+    str_start_state = json.dumps(start_state)
+    current_player.socket.send(str_start_state.encode())
     while True:                                                 #главный цикл игры
         try:
             raw_options = current_player.socket.recv(1024)
@@ -130,7 +131,7 @@ def fighter(current_player):
         players_state = {}
         for id, player in players.items():
             players_state[id] = player.get_self_state()
-        players_state
+ #       players_state
         try:
             str_players_state = json.dumps(data)
             byte_players_state = str_players_state.encode()

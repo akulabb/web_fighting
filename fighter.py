@@ -78,10 +78,14 @@ class Fighter(epg.Sprite):
 #        print(options)
         return options
     
-    def moving(self, game_state):
-        #print(game_state.get('coords'))
-        self.move_to(game_state.get('coords'))
-        self.health_bar.set_value(game_state.get('health'))
+    def moving(self, state):
+        x_pos, y_pos, health = state
+        self.move_to((x_pos, y_pos))
+        self.health_bar.set_value(health)
+        #print(state.get('coords'))
+        #self.move_to(state.get('coords'))
+        #self.health_bar.set_value(state.get('health'))
+        
 
 
 class HealthBar(epg.Label):

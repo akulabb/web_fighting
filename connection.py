@@ -10,7 +10,7 @@ class Conection :
     def get_start(self):
         return self.recv()
     
-    def get_game_state(self):
+    def get_game_state(self, options):
         self.send(options)
         game_state = self.recv()
         return game_state
@@ -18,8 +18,8 @@ class Conection :
     def recv(self, ):
         try:
             response = self.server.recv(1024)
-            data = response.decode()
-            str_data = json.loads(data) 
+            str_data = response.decode()
+            data = json.loads(str_data) 
         except Exception as err:
             print('connection error : ', err)
         return data

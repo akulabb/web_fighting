@@ -52,7 +52,7 @@ for id, player_pos in start_game_state.items():
                     ground_level=ground_level,
                     gravity=GRAVITY,
                     id=id
-                    )
+                    ))
 
 
 
@@ -75,7 +75,8 @@ def main():
             if fighter.id == current_fighter_id:
                 options = fighter.check_options()
                 game_state = server.get_game_state(options)
-                server.send(options)
+                #server.send(options)
+            fighter.moving(game_state.get(fighter.id))
         fighter1.moving(game_state)
         update()
         
