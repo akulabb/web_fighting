@@ -44,6 +44,7 @@ current_fighter_id = start_game_state.pop('current_player_id')
 fighters = []
 
 for id, player_pos in start_game_state.items():
+    print(f'fighter {id} created')
     x_pos, y_pos, wigth, height = player_pos
     fighters.append(Fighter(img=FIGHTER_IMAGE_PATH,
                     x_pos=x_pos,
@@ -72,14 +73,19 @@ horiz_speed = 0
 
 
 def main():
+    print('файтеры', len(fighters))
     while len(fighters) > 1:
+        print('start cadr')
         for fighter in fighters:
+            print('ищем своего файтера')
             if fighter.id == current_fighter_id:
+                print(f'файтер с айди {fighter.id} найден')
                 options = fighter.check_options()
                 game_state = server.get_game_state(options)
-                #server.send(options)
-            fighter.moving(game_state.get(fighter.id))
-        fighter1.moving(game_state)
+                break
+               #server.send(options)
+        for fighter in fighters:
+            fighter.moving(game_state.get(str(fighter.id)))
         update()
         
 
