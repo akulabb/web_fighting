@@ -31,6 +31,7 @@ players = {0 : None,
 		   3 : None,
 		   }
 
+active_players_num = 0
 
 class Player:
     def __init__(self, id, socket, gravity):
@@ -78,7 +79,7 @@ class Player:
         pos_y = self.rect.center_y + dy
         self.rect.update(pos_x, pos_y)
         return {'coords' : (pos_x, pos_y),
-                'health' : self.health_bar.value,
+                'health' : self.health,
                 } 
         
     def get_self_state(self):
@@ -106,9 +107,13 @@ def remove_player(id):
 	print('игрок закончился с id : ', id)
 
 
-def fighter(current_player):
+def threaded_player(current_player):
     print('Игрок создан с id : ', current_player.id)
     start_state = {'current_player_id' : current_player.id}
+    global active_players_num
+    while active_players_num < 2:
+        print(active_players_num, 'кол-во игроков')
+        time.sleep(1)
     for id, player in players.items():
         if player:
             start_state[id] = (player.rect.center_x, 
@@ -130,15 +135,17 @@ def fighter(current_player):
         current_player.apply_options(options)
         players_state = {}
         for id, player in players.items():
-            players_state[id] = player.get_self_state()
+            if player:
+                players_state[id] = player.get_self_state()
  #       players_state
         try:
-            str_players_state = json.dumps(data)
+            str_players_state = json.dumps(players_state)
             byte_players_state = str_players_state.encode()
-            self.socket.send(byte_players_state)
+            current_player.socket.send(byte_players_state)
         except Exception as err:
             print('connection error : ', err)
     remove_player(current_player.id)
+    active_players_num -= 1
 
 
 while True:
@@ -148,7 +155,8 @@ while True:
         if not player_in_slot:
             player = Player(id, player_socket, GRAVITY)
             players[id] = player
-            threading.Thread(target=fighter, args=(player,)).start()
+            active_players_num += 1
+            threading.Thread(target=threaded_player, args=(player,)).start()
             break
     else:
         print('Максимальное кичество игроков')
