@@ -18,6 +18,7 @@ class Conection :
     def recv(self, ):
         try:
             response = self.server.recv(1024)
+            print('recv bytes', response)
             str_data = response.decode()
             data = json.loads(str_data) 
         except Exception as err:
