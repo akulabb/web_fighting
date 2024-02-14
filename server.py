@@ -59,7 +59,6 @@ class Player:
  #           self.attack()
         dx += options.get('move')
         print('controling: dx=', dx, 'dy=', dy)
-#        self.flip_skins(options.get('direction'))
         #print(options.get('direction'))
         
         # gravitation
@@ -76,7 +75,7 @@ class Player:
             dx = SCREEN_WIDTH - self.rect.right
             print('right range: dx=', dx)
         if (self.rect.bottom + dy) > GROUND_LEVEL:
-            dy = GROUND_LEVEL - (self.rect.bottom + dy)
+            dy = (GROUND_LEVEL - self.rect.bottom)
             self.fall_speed = 0
             self.jumping = False
             print('self.rect.bottom = ', self.rect.bottom)
@@ -88,7 +87,7 @@ class Player:
         self.rect.update(pos_x, pos_y)
         return {'coords' : (pos_x, pos_y),
                 'health' : self.health,
-                } 
+                }
         
     def get_self_state(self):
         return (self.rect.center_x, self.rect.center_y, self.health)
@@ -102,8 +101,8 @@ class Rect:
         self.update(center_x, center_y)
     
     def update(self, center_x, center_y):
-        self.top = int(center_y + self.height / 2)
-        self.bottom = int(center_y - self.height / 2)
+        self.top = int(center_y - self.height / 2)
+        self.bottom = int(center_y + self.height / 2)
         self.right = int(center_x + self.wigth / 2)
         self.left = int(center_x - self.wigth / 2)
         self.center_x = center_x
