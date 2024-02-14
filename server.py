@@ -6,7 +6,7 @@ import json
 
 SCREEN_HEIGHT = 970
 SCREEN_WIDTH = 1280
-GROUND_LEVEL = SCREEN_HEIGHT - 254
+GROUND_LEVEL = SCREEN_HEIGHT - 254              #716
 START_POSITIONS = (int(SCREEN_WIDTH / 5), 
                    int(SCREEN_WIDTH - SCREEN_WIDTH / 5),
                    int(SCREEN_WIDTH / 5 * 2),
@@ -37,7 +37,7 @@ class Player:
     def __init__(self, id, socket, gravity):
         self.id = id
         self.health = 100
-        self.y_pos = GROUND_LEVEL - PLAYER_SIZE[1] / 2
+        self.y_pos = int(GROUND_LEVEL - PLAYER_SIZE[1] / 2)
         self.rect = Rect(PLAYER_SIZE, 
                          START_POSITIONS[self.id], 
                          self.y_pos
@@ -52,29 +52,37 @@ class Player:
         dx = 0
         dy = 0
         # controling
-        if options.get('jump') == True and not self.jumping:
+        if options.get('jump') and not self.jumping:
             self.fall_speed = -30
             self.jumping = True
 #        if options.get('hit') == True:
  #           self.attack()
         dx += options.get('move')
+        print('controling: dx=', dx, 'dy=', dy)
 #        self.flip_skins(options.get('direction'))
         #print(options.get('direction'))
         
         # gravitation
+    #    elif self.rect.bottom < GROUND_LEVEL:
         self.fall_speed += self.gravity
         dy = self.fall_speed
+        print('gravitation: dx=', dx, 'dy=', dy)
         
         # удержание спрайта в пределах экрана
-        if self.rect.left + dx < 0:
+        if (self.rect.left + dx) < 0:       #левая граница экрана
             dx = -self.rect.left
-        elif self.rect.right + dx > SCREEN_WIDTH:
+            print('left range: dx=', dx)
+        elif self.rect.right + dx > SCREEN_WIDTH:   #правая граница
             dx = SCREEN_WIDTH - self.rect.right
-        if self.rect.bottom + dy > GROUND_LEVEL:
-            dy -= self.rect.bottom + dy - GROUND_LEVEL
+            print('right range: dx=', dx)
+        if (self.rect.bottom + dy) > GROUND_LEVEL:
+            dy = GROUND_LEVEL - (self.rect.bottom + dy)
             self.fall_speed = 0
             self.jumping = False
+            print('self.rect.bottom = ', self.rect.bottom)
+            print('ground_range: dy=', dy)
         
+        print('frame range: dx=', dx, 'dy=', dy)
         pos_x = self.rect.center_x + dx
         pos_y = self.rect.center_y + dy
         self.rect.update(pos_x, pos_y)
@@ -94,10 +102,10 @@ class Rect:
         self.update(center_x, center_y)
     
     def update(self, center_x, center_y):
-        self.top = center_x + self.height / 2
-        self.bottom = center_x - self.height / 2
-        self.right = center_y + self.wigth / 2
-        self.left = center_y - self.wigth / 2
+        self.top = int(center_y + self.height / 2)
+        self.bottom = int(center_y - self.height / 2)
+        self.right = int(center_x + self.wigth / 2)
+        self.left = int(center_x - self.wigth / 2)
         self.center_x = center_x
         self.center_y = center_y    
 
@@ -123,12 +131,12 @@ def threaded_player(current_player):
                                )
     str_start_state = json.dumps(start_state)
     current_player.socket.send(str_start_state.encode())
+    print('player', current_player.id, 'start state:', str_start_state)
     while True:                                                 #главный цикл игры
         try:
             raw_options = current_player.socket.recv(1024)
             str_options = raw_options.decode()
             options = json.loads(str_options)
-            #print('options:', options)   # TODO: получить game_state от всех игроков и отправить в клиент
         except Exception as err:
             print('Потерянно соеденение с : ', current_player.id, 'игрок отключился')
             break
