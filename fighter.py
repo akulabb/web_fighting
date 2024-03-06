@@ -3,8 +3,8 @@ from easy_pygame import UP, DOWN, LEFT, RIGHT, BORDER
 import pygame
 
 
-SCREEN_HEIGHT = 970
-SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 1000
+SCREEN_WIDTH = 800
 RIGHT = False
 LEFT = True
 
@@ -16,7 +16,8 @@ class Fighter(epg.Sprite):
         self.gravity = gravity
         self.fall_speed = 0
         self.ground_level = ground_level
-        self.skins_dir = flip
+        self.skins_dir = False
+        self.flip_skins(flip)
         self.jumping = False
         self.knife = None
         self.enemy = None
@@ -34,7 +35,7 @@ class Fighter(epg.Sprite):
         else:
             hit_x = self.pos[0] + attack_dist / 2
         
-        knife = epg.Sprite(img=epg.RED,
+        knife = epg.Sprite(img=epg.WHITE,
                                 w=attack_dist,
                                 h=self.size[1],
                                 pos=(hit_x, self.pos[1]),
@@ -46,7 +47,6 @@ class Fighter(epg.Sprite):
         
     def flip_skins(self, flipped):
         if self.skins_dir is not flipped:
-            #print(903)
             self.flip(orig=False, x=True)
             self.skins_dir = flipped
     

@@ -4,8 +4,8 @@ import time
 import json
 
 
-SCREEN_HEIGHT = 970
-SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 1000
+SCREEN_WIDTH = 800
 GROUND_LEVEL = SCREEN_HEIGHT - 254              #716
 START_POSITIONS = (int(SCREEN_WIDTH / 5), 
                    int(SCREEN_WIDTH - SCREEN_WIDTH / 5),
@@ -36,6 +36,7 @@ active_players_num = 0
 class Player:
     def __init__(self, id, socket, gravity):
         self.id = id
+        self.dir = self.id % 2 or False            # True влево, False вправо
         self.health = 100
         self.y_pos = int(GROUND_LEVEL - PLAYER_SIZE[1] / 2)
         self.rect = Rect(PLAYER_SIZE, 
@@ -47,41 +48,62 @@ class Player:
         self.jumping = False
         self.gravity = gravity
         
-    def apply_options(self, options):
+    def attack(self,):
+        attack_dist = self.rect.width
+        if self.dir:
+            hit_x = self.rect.center_x - attack_dist / 2
+        else:
+            hit_x = self.rect.center_x + attack_dist / 2
+        
+        hit = Rect(PLAYER_SIZE,
+                     hit_x,
+                     self.y_pos,
+                     )
+        
+        print('starting apply hitted')
+        for hitted_enemy in hit.get_hitted(self.id): 
+            hitted_enemy.hitted()
+            print('attack:enemy id', hitted_enemy.id)
     
+    def hitted(self):
+        self.health -= 5
+        print('hitted:health', self.health)
+    
+    def apply_options(self, options):
         dx = 0
         dy = 0
         # controling
         if options.get('jump') and not self.jumping:
             self.fall_speed = -30
             self.jumping = True
-#        if options.get('hit') == True:
- #           self.attack()
+        if options.get('hit'):
+            print('call attack')
+            self.attack()
         dx += options.get('move')
-        print('controling: dx=', dx, 'dy=', dy)
+       # print('controling: dx=', dx, 'dy=', dy)
         #print(options.get('direction'))
         
         # gravitation
     #    elif self.rect.bottom < GROUND_LEVEL:
         self.fall_speed += self.gravity
         dy = self.fall_speed
-        print('gravitation: dx=', dx, 'dy=', dy)
+    #    print('gravitation: dx=', dx, 'dy=', dy)
         
         # удержание спрайта в пределах экрана
         if (self.rect.left + dx) < 0:       #левая граница экрана
             dx = -self.rect.left
-            print('left range: dx=', dx)
+         #   print('left range: dx=', dx)
         elif self.rect.right + dx > SCREEN_WIDTH:   #правая граница
             dx = SCREEN_WIDTH - self.rect.right
-            print('right range: dx=', dx)
+        #    print('right range: dx=', dx)
         if (self.rect.bottom + dy) > GROUND_LEVEL:
             dy = (GROUND_LEVEL - self.rect.bottom)
             self.fall_speed = 0
             self.jumping = False
-            print('self.rect.bottom = ', self.rect.bottom)
-            print('ground_range: dy=', dy)
+       #     print('self.rect.bottom = ', self.rect.bottom)
+      #      print('ground_range: dy=', dy)
         
-        print('frame range: dx=', dx, 'dy=', dy)
+     #   print('frame range: dx=', dx, 'dy=', dy)
         pos_x = self.rect.center_x + dx
         pos_y = self.rect.center_y + dy
         self.rect.update(pos_x, pos_y)
@@ -95,7 +117,7 @@ class Player:
 
 class Rect:
     def __init__(self, size, center_x, center_y, ):
-        self.wigth, self.height = size
+        self.width, self.height = size
         self.center_x = center_x
         self.center_y = center_y
         self.update(center_x, center_y)
@@ -103,10 +125,23 @@ class Rect:
     def update(self, center_x, center_y):
         self.top = int(center_y - self.height / 2)
         self.bottom = int(center_y + self.height / 2)
-        self.right = int(center_x + self.wigth / 2)
-        self.left = int(center_x - self.wigth / 2)
+        self.right = int(center_x + self.width / 2)
+        self.left = int(center_x - self.width / 2)
         self.center_x = center_x
         self.center_y = center_y    
+    
+    def get_hitted(self, my_player_id):
+        enemies = []
+        for id, player in players.items():
+            if player and not id == my_player_id:
+                if (player.rect.right >= self.left and
+                        player.rect.left <= self.right and
+                        player.rect.top <= self.bottom and
+                        player.rect.bottom >= self.top):
+                    print('enemys append')
+                    enemies.append(player)
+        return enemies
+        
 
 def remove_player(id):
 	players[id].socket.close()
@@ -123,9 +158,10 @@ def threaded_player(current_player):
         time.sleep(1)
     for id, player in players.items():
         if player:
-            start_state[id] = (player.rect.center_x, 
+            start_state[id] = (player.dir,
+                               player.rect.center_x, 
                                player.rect.center_y, 
-                               player.rect.wigth, 
+                               player.rect.width,
                                player.rect.height,
                                )
     str_start_state = json.dumps(start_state)

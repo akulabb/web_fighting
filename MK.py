@@ -6,8 +6,8 @@ import connection
 import os
 
 epg.AUTO_UPDATE = False
-SCREEN_HEIGHT = epg.HEIGHT = 970
-SCREEN_WIDTH = epg.WIDTH = 1280
+SCREEN_HEIGHT = epg.HEIGHT = 1000
+SCREEN_WIDTH = epg.WIDTH = 800
 FPS = 30
 BALL_IMAGE_PATH = 'photos/ball.png'
 EARTH_IMAGE_PATH = 'photos/earth.png'
@@ -45,11 +45,12 @@ fighters = []
 
 for id, player_pos in start_game_state.items():
     print(f'fighter {id} created')
-    x_pos, y_pos, wigth, height = player_pos
+    dir, x_pos, y_pos, wigth, height = player_pos
+    print('dirrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr', dir) 
     fighters.append(Fighter(img=FIGHTER_IMAGE_PATH,
                     x_pos=x_pos,
                     y_pos=y_pos,
-                    flip = False,
+                    flip = dir,
                     wigth=wigth, 
                     height=height,
                     ground_level=ground_level,
@@ -75,11 +76,11 @@ horiz_speed = 0
 def main():
     print('файтеры', len(fighters))
     while len(fighters) > 1:
-        print('start cadr')
+     #   print('start cadr')
         for fighter in fighters:
-            print('ищем своего файтера')
+         #   print('ищем своего файтера')
             if fighter.id == current_fighter_id:
-                print(f'файтер с айди {fighter.id} найден')
+              #  print(f'файтер с айди {fighter.id} найден')
                 options = fighter.check_options()
                 game_state = server.get_game_state(options)
                 break
