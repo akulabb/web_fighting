@@ -6,7 +6,7 @@ import connection
 import os
 
 epg.AUTO_UPDATE = False
-SCREEN_HEIGHT = epg.HEIGHT = 1000
+SCREEN_HEIGHT = epg.HEIGHT = 600
 SCREEN_WIDTH = epg.WIDTH = 800
 FPS = 30
 BALL_IMAGE_PATH = 'photos/ball.png'
@@ -86,7 +86,7 @@ def main():
                 break
                #server.send(options)
         for fighter in fighters:
-            fighter.moving(game_state.get(str(fighter.id)))
+            fighter.apply_game_state(game_state.get(str(fighter.id)))
         update()
         
 

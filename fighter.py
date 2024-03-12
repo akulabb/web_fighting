@@ -3,7 +3,7 @@ from easy_pygame import UP, DOWN, LEFT, RIGHT, BORDER
 import pygame
 
 
-SCREEN_HEIGHT = 1000
+SCREEN_HEIGHT = 600
 SCREEN_WIDTH = 800
 RIGHT = False
 LEFT = True
@@ -18,44 +18,20 @@ class Fighter(epg.Sprite):
         self.ground_level = ground_level
         self.skins_dir = False
         self.flip_skins(flip)
-        self.jumping = False
         self.knife = None
         self.enemy = None
         self.id = id
         self.health_bar = HealthBar(id=self.id, health=100)
         self.speed = 10
-        
-    def fights(self, enemy):
-        self.enemy = enemy
-        
-    def attack(self, ):
-        attack_dist = self.size[0]
-        if self.skins_dir:
-            hit_x = self.pos[0] - attack_dist / 2
-        else:
-            hit_x = self.pos[0] + attack_dist / 2
-        
-        knife = epg.Sprite(img=epg.WHITE,
-                                w=attack_dist,
-                                h=self.size[1],
-                                pos=(hit_x, self.pos[1]),
-                                )
-        if knife.taped(self.enemy):
-            self.enemy.update_health(-5)
-        epg.update()
-        knife.kill()
-        
-    def flip_skins(self, flipped):
-        if self.skins_dir is not flipped:
-            self.flip(orig=False, x=True)
-            self.skins_dir = flipped
-    
-    
-    def update_health(self, health):
-        self.health_bar.set_value(self.health_bar.value + health)
-        
-        
-    
+        self.actions = (self.stay,
+                        self.go,
+                        self.jump,
+                        self.attack,
+                        self.hitted,
+                        self.dead
+                       )
+        # 0 = stay, 1 = go, 2 = jump, 3 = attack, 4 hitted, 5 = dead
+
     def check_options(self, ):
         options = {'move' : 0,
                    'direction' : self.skins_dir,
@@ -77,15 +53,34 @@ class Fighter(epg.Sprite):
             options['hit'] = True
 #        print(options)
         return options
+        
+    def flip_skins(self, flipped):
+        if self.skins_dir is not flipped:
+            self.flip(orig=False, x=True)
+            self.skins_dir = flipped
+        
+    def update_health(self, health):
+        self.health_bar.set_value(self.health_bar.value + health)    
+        
+    def stay(self,):
+        pass
+        
+    def go(self,):
+        pass
+        
+    def jump(self,):
+        pass
+        
+    def attack(self, ):
+        
+        
+    def hitted(self,):
+        pass
     
-    def moving(self, state):
+    def apply_game_state(self, state):
         x_pos, y_pos, health = state
         self.move_to((x_pos, y_pos))
         self.health_bar.set_value(health)
-        #print(state.get('coords'))
-        #self.move_to(state.get('coords'))
-        #self.health_bar.set_value(state.get('health'))
-        
 
 
 class HealthBar(epg.Label):

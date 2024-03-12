@@ -4,7 +4,7 @@ import time
 import json
 
 
-SCREEN_HEIGHT = 1000
+SCREEN_HEIGHT = 600
 SCREEN_WIDTH = 800
 GROUND_LEVEL = SCREEN_HEIGHT - 254              #716
 START_POSITIONS = (int(SCREEN_WIDTH / 5), 
@@ -15,6 +15,8 @@ START_POSITIONS = (int(SCREEN_WIDTH / 5),
 
 SERVER = 'localhost'
 PORT = 5555
+
+ATTACK_DELAY = 40
 
 PLAYER_SIZE = (280, 180)
 
@@ -35,6 +37,8 @@ active_players_num = 0
 
 class Player:
     def __init__(self, id, socket, gravity):
+        self.action_delay = 0
+        self.action = 0     # 0 = stay, 1 = go, 2 = jump, 3 = attack, 4 hitted, 5 = dead
         self.id = id
         self.dir = self.id % 2 or False            # True влево, False вправо
         self.health = 100
@@ -49,6 +53,7 @@ class Player:
         self.gravity = gravity
         
     def attack(self,):
+        action = 3
         attack_dist = self.rect.width
         if self.dir:
             hit_x = self.rect.center_x - attack_dist / 2
@@ -76,7 +81,7 @@ class Player:
         if options.get('jump') and not self.jumping:
             self.fall_speed = -30
             self.jumping = True
-        if options.get('hit'):
+        if options.get('hit') and not action_delay:
             print('call attack')
             self.attack()
         dx += options.get('move')
@@ -106,6 +111,8 @@ class Player:
      #   print('frame range: dx=', dx, 'dy=', dy)
         pos_x = self.rect.center_x + dx
         pos_y = self.rect.center_y + dy
+        if self.action_delay:
+            self.action_delay -= 1
         self.rect.update(pos_x, pos_y)
         return {'coords' : (pos_x, pos_y),
                 'health' : self.health,
