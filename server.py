@@ -51,9 +51,10 @@ class Player:
         self.fall_speed = 0
         self.jumping = False
         self.gravity = gravity
-        
+    
     def attack(self,):
-        action = 3
+        self.action = 3
+        self.action_delay = ATTACK_DELAY
         attack_dist = self.rect.width
         if self.dir:
             hit_x = self.rect.center_x - attack_dist / 2
@@ -81,7 +82,7 @@ class Player:
         if options.get('jump') and not self.jumping:
             self.fall_speed = -30
             self.jumping = True
-        if options.get('hit') and not action_delay:
+        if options.get('hit') and not self.action_delay:
             print('call attack')
             self.attack()
         dx += options.get('move')
@@ -114,12 +115,9 @@ class Player:
         if self.action_delay:
             self.action_delay -= 1
         self.rect.update(pos_x, pos_y)
-        return {'coords' : (pos_x, pos_y),
-                'health' : self.health,
-                }
         
     def get_self_state(self):
-        return (self.rect.center_x, self.rect.center_y, self.health)
+        return (self.rect.center_x, self.rect.center_y, self.health, self.action, )
     
 
 class Rect:
@@ -211,3 +209,4 @@ while True:
     else:
         print('Максимальное кичество игроков')
         player_socket.close()
+        
