@@ -17,8 +17,8 @@ class Fighter(epg.Sprite):
         self.fall_speed = 0
         self.ground_level = ground_level
         self.skins_dir = False
-        self.flip_skins(flip)
         self.knife = None
+        self.direction = flip
         self.enemy = None
         self.id = id
         self.health_bar = HealthBar(id=self.id, health=100)
@@ -27,6 +27,7 @@ class Fighter(epg.Sprite):
         self.animation_list = []
         for img_path in animation_list:
             self.animation_list.append(self.load_img(img=img_path))
+        self.stay()
         self.actions = (self.stay,
                         self.go,
                         self.jump,
@@ -57,17 +58,13 @@ class Fighter(epg.Sprite):
             options['hit'] = True
 #        print(options)
         return options
-        
-    def flip_skins(self, flipped):
-        if self.skins_dir is not flipped:
-            self.flip(orig=False, x=True)
-            self.skins_dir = flipped
+
         
     def update_health(self, health):
         self.health_bar.set_value(self.health_bar.value + health)    
         
     def stay(self,):
-        pass
+        self.set_skin(0)
         
     def go(self,):
         pass
@@ -85,12 +82,16 @@ class Fighter(epg.Sprite):
         pass
     
     def apply_game_state(self, state):
-        x_pos, y_pos, health, action = state
+        x_pos, y_pos, health, action, self.direction = state
         self.move_to((x_pos, y_pos))
         self.health_bar.set_value(health)
         self.actions[action]()
     
     def set_skin(self, skin_index):
+        if self.skins_dir != self.direction:
+            for index, skin in enumerate(self.animation_list):
+                self.animation_list[index] = pygame.transform.flip(skin, flip_x=True, flip_y=False)             #TODO посмотреть как работает flip и доделать разворот картинки
+            self.skins_dir = self.direction
         self.image = self.orig_image = self.animation_list[skin_index]
         self.skin_index = skin_index
 
@@ -111,5 +112,4 @@ class HealthBar(epg.Label):
         pygame.draw.rect(surface, epg.RED, (2, 2, self.WIDTH, self.HEIGHT))
         pygame.draw.rect(surface, epg.YELLOW, (2, 2, self.value * raito, self.HEIGHT))
         return surface
-        
-                          
+    

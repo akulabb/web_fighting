@@ -40,7 +40,7 @@ class Player:
         self.action_delay = 0
         self.action = 0     # 0 = stay, 1 = go, 2 = jump, 3 = attack, 4 hitted, 5 = dead
         self.id = id
-        self.dir = self.id % 2 or False            # True влево, False вправо
+        self.dir = bool(self.id % 2) or False            # True влево, False вправо
         self.health = 100
         self.y_pos = int(GROUND_LEVEL - PLAYER_SIZE[1] / 2)
         self.rect = Rect(PLAYER_SIZE, 
@@ -85,9 +85,11 @@ class Player:
         if options.get('hit') and not self.action_delay:
             print('call attack')
             self.attack()
+        if self.action_delay < ATTACK_DELAY:
+            self.action = 0
         dx += options.get('move')
        # print('controling: dx=', dx, 'dy=', dy)
-        #print(options.get('direction'))
+        self.dir = options.get('direction')
         
         # gravitation
     #    elif self.rect.bottom < GROUND_LEVEL:
@@ -117,7 +119,7 @@ class Player:
         self.rect.update(pos_x, pos_y)
         
     def get_self_state(self):
-        return (self.rect.center_x, self.rect.center_y, self.health, self.action, )
+        return (self.rect.center_x, self.rect.center_y, self.health, self.action, self.dir)
     
 
 class Rect:
