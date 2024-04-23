@@ -198,7 +198,7 @@ class Sprite(pygame.sprite.Sprite):
         if AUTO_UPDATE:
             update()
     
-    def load_img(self, img=GREEN, savescale=True, full_path=False):
+    def load_img(self, img=GREEN, savescale=True, full_path=False, colorkey=WHITE):
         w, h = self.size
         if type(img) == str:
             if not full_path:
@@ -209,7 +209,7 @@ class Sprite(pygame.sprite.Sprite):
                 h = int(image.get_height() * scale)
                 self.size = w, h
             image = pygame.transform.scale(image, (w, h))
-            image.set_colorkey(WHITE)
+            image.set_colorkey(colorkey)
         else:
             image = pygame.Surface((w, h))
             image.fill(img)

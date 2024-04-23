@@ -10,9 +10,9 @@ LEFT = True
 
 
 class Fighter(epg.Sprite):
-    def __init__(self, animation_list, x_pos, y_pos, flip, wigth, height, ground_level, gravity, id, img=epg.GREEN):
+    def __init__(self, animation_pathes, x_pos, y_pos, flip, wigth, height, ground_level, gravity, id, img=epg.GREEN):
         pos = (x_pos, y_pos)
-        super().__init__(img=animation_list[0], pos=pos, w=wigth, h=height, savescale=False)
+        super().__init__(img=animation_pathes[0], pos=pos, w=wigth, h=height, savescale=False)
         self.gravity = gravity
         self.fall_speed = 0
         self.ground_level = ground_level
@@ -25,8 +25,8 @@ class Fighter(epg.Sprite):
         self.speed = 10
         self.skin_index = 0
         self.animation_list = []
-        for img_path in animation_list:
-            self.animation_list.append(self.load_img(img=img_path))
+        for img_path in animation_pathes:
+            self.animation_list.append(self.load_img(img=img_path, colorkey=(43, 205, 27)))
         self.stay()
         self.actions = (self.stay,
                         self.go,
@@ -67,19 +67,19 @@ class Fighter(epg.Sprite):
         self.set_skin(0)
         
     def go(self,):
-        pass
-        
-    def jump(self,):
-        pass
-        
-    def attack(self, ):
         self.set_skin(1)
         
+    def jump(self,):
+        self.set_skin(2)
+        
+    def attack(self, ):
+        self.set_skin(3)
+        
     def hitted(self,):
-        pass
+        self.set_skin(4)
     
     def dead(self,):
-        pass
+        self.set_skin(5)
     
     def apply_game_state(self, state):
         x_pos, y_pos, health, action, self.direction = state

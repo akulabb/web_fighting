@@ -20,8 +20,12 @@ GRAVITY = 2
 #EARTH = 716
 
 PROJECT_DIR = os.getcwd()
-FIGHTER_IMAGE_PATHES = (os.path.join(PROJECT_DIR, 'photos\\fighter.png'),
-                        os.path.join(PROJECT_DIR, 'photos\\fighter_attack.png')             
+FIGHTER_IMAGE_PATHES = (os.path.join(PROJECT_DIR, 'photos\\stay.png'),
+                        os.path.join(PROJECT_DIR, 'photos\\go.png'),
+                        os.path.join(PROJECT_DIR, 'photos\\jump.png'),
+                        os.path.join(PROJECT_DIR, 'photos\\attack.png'),
+                        os.path.join(PROJECT_DIR, 'photos\\hitted.png'),
+                        os.path.join(PROJECT_DIR, 'photos\\dead.png'),
                         )
 
 SERVER = 'localhost'
@@ -48,8 +52,7 @@ fighters = []
 for id, player_pos in start_game_state.items():
     print(f'fighter {id} created')
     dir, x_pos, y_pos, wigth, height = player_pos
-    print('dirrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr', dir) 
-    fighters.append(Fighter(animation_list=FIGHTER_IMAGE_PATHES,
+    fighters.append(Fighter(animation_pathes=FIGHTER_IMAGE_PATHES,
                     x_pos=x_pos,
                     y_pos=y_pos,
                     flip = dir,

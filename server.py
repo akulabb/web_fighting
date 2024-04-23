@@ -6,7 +6,7 @@ import json
 
 SCREEN_HEIGHT = 600
 SCREEN_WIDTH = 800
-GROUND_LEVEL = SCREEN_HEIGHT - 254              #716
+GROUND_LEVEL = SCREEN_HEIGHT - 150              #716
 START_POSITIONS = (int(SCREEN_WIDTH / 5), 
                    int(SCREEN_WIDTH - SCREEN_WIDTH / 5),
                    int(SCREEN_WIDTH / 5 * 2),
@@ -18,7 +18,7 @@ PORT = 5555
 
 ATTACK_DELAY = 40
 
-PLAYER_SIZE = (280, 180)
+PLAYER_SIZE = (130, 130)
 
 GRAVITY = 2
 
@@ -79,14 +79,13 @@ class Player:
         dx = 0
         dy = 0
         # controling
+        self.action = 0
         if options.get('jump') and not self.jumping:
             self.fall_speed = -30
             self.jumping = True
         if options.get('hit') and not self.action_delay:
             print('call attack')
             self.attack()
-        if self.action_delay < ATTACK_DELAY:
-            self.action = 0
         dx += options.get('move')
        # print('controling: dx=', dx, 'dy=', dy)
         self.dir = options.get('direction')
@@ -116,6 +115,7 @@ class Player:
         pos_y = self.rect.center_y + dy
         if self.action_delay:
             self.action_delay -= 1
+      #  print('ground_level, pos_x', GROUND_LEVEL, pos_y+250)
         self.rect.update(pos_x, pos_y)
         
     def get_self_state(self):
