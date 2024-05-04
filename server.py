@@ -16,7 +16,17 @@ START_POSITIONS = (int(SCREEN_WIDTH / 5),
 SERVER = 'localhost'
 PORT = 5555
 
+
+STAY = 0
+GO = 1
+JUMP = 2
+ATTACK = 3
+HITTED = 4
+DEAD = 5
+
+
 ATTACK_DELAY = 40
+HITTED_DELAY = 10
 
 PLAYER_SIZE = (130, 130)
 
@@ -37,8 +47,9 @@ active_players_num = 0
 
 class Player:
     def __init__(self, id, socket, gravity):
-        self.action_delay = 0
-        self.action = 0     # 0 = stay, 1 = go, 2 = jump, 3 = attack, 4 hitted, 5 = dead
+        self.attack_delay = 0
+        self.hitted_delay = 0
+        self.action = STAY     # 0 = stay, 1 = go, 2 = jump, 3 = attack, 4 hitted, 5 = dead
         self.id = id
         self.dir = bool(self.id % 2) or False            # True влево, False вправо
         self.health = 100
@@ -53,8 +64,7 @@ class Player:
         self.gravity = gravity
     
     def attack(self,):
-        self.action = 3
-        self.action_delay = ATTACK_DELAY
+        self.attack_delay = ATTACK_DELAY
         attack_dist = self.rect.width
         if self.dir:
             hit_x = self.rect.center_x - attack_dist / 2
@@ -72,50 +82,55 @@ class Player:
             print('attack:enemy id', hitted_enemy.id)
     
     def hitted(self):
-        self.health -= 5
+        self.hitted_delay = HITTED_DELAY
+        if self.health > 0:
+            self.health -= 5
+            self.action = HITTED
+        if self.health < 1:
+            self.action = DEAD
         print('hitted:health', self.health)
     
     def apply_options(self, options):
         dx = 0
         dy = 0
-        # controling
-        self.action = 0
-        if options.get('jump') and not self.jumping:
-            self.fall_speed = -30
-            self.jumping = True
-        if options.get('hit') and not self.action_delay:
-            print('call attack')
-            self.attack()
-        dx += options.get('move')
-       # print('controling: dx=', dx, 'dy=', dy)
-        self.dir = options.get('direction')
-        
         # gravitation
-    #    elif self.rect.bottom < GROUND_LEVEL:
         self.fall_speed += self.gravity
         dy = self.fall_speed
-    #    print('gravitation: dx=', dx, 'dy=', dy)
         
         # удержание спрайта в пределах экрана
         if (self.rect.left + dx) < 0:       #левая граница экрана
             dx = -self.rect.left
-         #   print('left range: dx=', dx)
         elif self.rect.right + dx > SCREEN_WIDTH:   #правая граница
             dx = SCREEN_WIDTH - self.rect.right
-        #    print('right range: dx=', dx)
         if (self.rect.bottom + dy) > GROUND_LEVEL:
             dy = (GROUND_LEVEL - self.rect.bottom)
             self.fall_speed = 0
             self.jumping = False
-       #     print('self.rect.bottom = ', self.rect.bottom)
-      #      print('ground_range: dy=', dy)
         
-     #   print('frame range: dx=', dx, 'dy=', dy)
+        # controling
+        if self.action != DEAD:
+            if self.hitted_delay:
+                self.action = HITTED
+                self.hitted_delay -= 1
+            else:
+                self.action = STAY
+                if options.get('move'):
+                    self.action = GO
+                if options.get('jump') and not self.jumping:
+                    self.fall_speed = -30
+                    self.jumping = True
+                    self.action = JUMP
+                if options.get('hit') and not self.attack_delay:
+                    print('call attack')
+                    self.action = ATTACK
+                    self.attack()
+                dx += options.get('move')
+                self.dir = options.get('direction')
+
         pos_x = self.rect.center_x + dx
         pos_y = self.rect.center_y + dy
-        if self.action_delay:
-            self.action_delay -= 1
-      #  print('ground_level, pos_x', GROUND_LEVEL, pos_y+250)
+        if self.attack_delay:
+            self.attack_delay -= 1
         self.rect.update(pos_x, pos_y)
         
     def get_self_state(self):

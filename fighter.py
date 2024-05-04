@@ -8,6 +8,12 @@ SCREEN_WIDTH = 800
 RIGHT = False
 LEFT = True
 
+STAY = 0
+GO = 1
+JUMP = 2
+ATTACK = 3
+HITTED = 4
+DEAD = 5
 
 class Fighter(epg.Sprite):
     def __init__(self, animation_pathes, x_pos, y_pos, flip, wigth, height, ground_level, gravity, id, img=epg.GREEN):
@@ -64,22 +70,22 @@ class Fighter(epg.Sprite):
         self.health_bar.set_value(self.health_bar.value + health)    
         
     def stay(self,):
-        self.set_skin(0)
+        self.set_skin(STAY)
         
     def go(self,):
-        self.set_skin(1)
+        self.set_skin(GO)
         
     def jump(self,):
-        self.set_skin(2)
+        self.set_skin(JUMP)
         
     def attack(self, ):
-        self.set_skin(3)
+        self.set_skin(ATTACK)
         
     def hitted(self,):
-        self.set_skin(4)
+        self.set_skin(HITTED)
     
     def dead(self,):
-        self.set_skin(5)
+        self.set_skin(DEAD)
     
     def apply_game_state(self, state):
         x_pos, y_pos, health, action, self.direction = state

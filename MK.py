@@ -11,6 +11,7 @@ SCREEN_WIDTH = epg.WIDTH = 800
 FPS = 30
 BALL_IMAGE_PATH = 'photos/ball.png'
 EARTH_IMAGE_PATH = 'photos/earth.png'
+BACK_IMAGE_PATH = 'photos/back.png'
 
 HEIGHT_HALF = int(SCREEN_HEIGHT/2)
 WIDTH_HALF = int(SCREEN_WIDTH/2)
@@ -64,38 +65,17 @@ for id, player_pos in start_game_state.items():
                     ))
 
 
-
-    
-
-
-
-
-
-
-fall_speed = 0
-horiz_speed = 0
-
-#fighter1.fights(fighter2)
-
-
 def main():
     print('файтеры', len(fighters))
     while len(fighters) > 1:
-     #   print('start cadr')
         for fighter in fighters:
-         #   print('ищем своего файтера')
             if fighter.id == current_fighter_id:
-              #  print(f'файтер с айди {fighter.id} найден')
                 options = fighter.check_options()
                 game_state = server.get_game_state(options)
                 break
-               #server.send(options)
         for fighter in fighters:
             fighter.apply_game_state(game_state.get(str(fighter.id)))
         update()
-        
-
-        
-
+       
+       
 main()
-
