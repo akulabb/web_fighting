@@ -33,6 +33,7 @@ FIGHTER_IMAGE_PATHES = (os.path.join(PROJECT_DIR, 'photos\\stay.png'),
 
 BUTTON_RELEASED_IMAGE_PATH = 'photos/released.jpeg'
 BUTTON_PRESSED_IMAGE_PATH = 'photos/pressed.jpeg'
+BUTTON_DISABLED_IMAGE_PATH = 'photos/disabled.jpeg'
 
 SERVER = 'localhost'
 PORT = 5555
@@ -90,22 +91,31 @@ class Menu():
                     update()
                     time.sleep(0.5)
                     menu = False
-                    button.set_skin(0)
+                    button.set_skin(button.RELEASED)
         for button in self.buttons:
             button.hide()
         for label in labels:
             label.hide()
         return choice
+        
+    def enable_button(self, button_name, enable=True):
+        for button in self.buttons:
+            if button.text == button_name:
+                button.enable(enable)
 
 
 class Button(epg.Sprite, epg.Label):
+    RELEASED = 0
+    PRESSED = 1
+    DISABLED = 2
     def __init__(self, button_image_paths, text, pos, w=50, h=50, savescale=False):
         epg.Sprite.__init__(self, button_image_paths[0], pos, w=w, h=h, savescale=savescale)
         epg.Label.__init__(self, text=text, x=pos[0], y=pos[1], center=True)
-        skin_index = 0
+        self.skin_index = self.RELEASED
         self.animation_list = []
-        self.animation_list.append(self.load_img(img=button_image_paths[0]))
-        self.animation_list.append(self.load_img(img=button_image_paths[1]))
+        self.animation_list.append(self.load_img(img=button_image_paths[self.RELEASED]))
+        self.animation_list.append(self.load_img(img=button_image_paths[self.PRESSED]))
+        self.animation_list.append(self.load_img(img=button_image_paths[self.DISABLED]))
 
     
     def set_skin(self, skin_index):
@@ -113,12 +123,13 @@ class Button(epg.Sprite, epg.Label):
         self.skin_index = skin_index
     
     def get_pressed(self,):
-        if self.taped(epg.MOUSE) and pg.mouse.get_pressed()[0]:
-            self.set_skin(1)
-            return True
-        else:
-            self.set_skin(0)
-            return False
+        if not self.skin_index == self.DISABLED:
+            if self.taped(epg.MOUSE) and pg.mouse.get_pressed()[0]:
+                self.set_skin(self.PRESSED)
+                return True
+     #   else:
+      #      self.set_skin(self.RELEASED)
+      #      return False
     
     def hide(self):
         epg.Sprite.hide(self)
@@ -127,6 +138,12 @@ class Button(epg.Sprite, epg.Label):
     def show(self):
         epg.Sprite.show(self)
         epg.Label.show(self)
+        
+    def enable(self, enable=True):
+        if enable:
+            self.set_skin(self.RELEASED)
+        else:
+            self.set_skin(self.DISABLED)
 
 
 def update():
@@ -178,14 +195,18 @@ def fight():
 menu = Menu(screen,
             BACK_IMAGE_PATH, 
             ('играть', 'выйти'),
-            (BUTTON_RELEASED_IMAGE_PATH, BUTTON_PRESSED_IMAGE_PATH),
+            (BUTTON_RELEASED_IMAGE_PATH, BUTTON_PRESSED_IMAGE_PATH, BUTTON_DISABLED_IMAGE_PATH),
             (110, 110),
             button_order='h',
             button_margin=205,
             )
+
+menu.enable_button('играть', False)
 
 choice = menu.get_choice()
 
 if choice == 'выйти':
     exit()
 
+if choice == 'играть':
+    fight()
