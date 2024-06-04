@@ -155,16 +155,18 @@ def update():
 
 screen = epg.Screen(EARTH_IMAGE_PATH, width=SCREEN_WIDTH, height=SCREEN_HEIGHT)
 
-#server = connection.Conection(SERVER, PORT)
+server = connection.Conection(SERVER, PORT)
+
+fighters = []
+
+current_fighter_id = 0
 
 ground_level = SCREEN_HEIGHT - 254
 
 def start_game():
     start_game_state = server.get_start()
+    global current_fighter_id
     current_fighter_id = start_game_state.pop('current_player_id')
-
-    fighters = []
-
     for id, player_pos in start_game_state.items():
         print(f'fighter {id} created')
         dir, x_pos, y_pos, wigth, height = player_pos
@@ -178,11 +180,12 @@ def start_game():
                         gravity=GRAVITY,
                         id=int(id)
                         ))
+    menu.enable_button('играть')
 
 
 def fight():
     print('файтеры', len(fighters))
-    while len(fighters) > 1:
+    while len(fighters) > 1:                              #TODO вместо количества должно быть здоровье
         for fighter in fighters:
             if fighter.id == current_fighter_id:
                 options = fighter.check_options()
@@ -191,6 +194,7 @@ def fight():
         for fighter in fighters:
             fighter.apply_game_state(game_state.get(str(fighter.id)))
         update()
+    print('end')
        
 menu = Menu(screen,
             BACK_IMAGE_PATH, 
@@ -203,10 +207,13 @@ menu = Menu(screen,
 
 menu.enable_button('играть', False)
 
+threading.Thread(target=start_game).start()
+
 choice = menu.get_choice()
 
 if choice == 'выйти':
     exit()
 
 if choice == 'играть':
+    screen.set_background(EARTH_IMAGE_PATH)
     fight()

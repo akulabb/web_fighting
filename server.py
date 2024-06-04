@@ -25,8 +25,8 @@ HITTED = 4
 DEAD = 5
 
 
-ATTACK_DELAY = 40
-HITTED_DELAY = 10
+ATTACK_DELAY = 5
+HITTED_DELAY = 5
 
 PLAYER_SIZE = (130, 130)
 
@@ -43,7 +43,8 @@ players = {0 : None,
 		   3 : None,
 		   }
 
-active_players_num = 0
+connected_players_num = 0
+alive_players_num = 0
 
 class Player:
     def __init__(self, id, socket, gravity):
@@ -88,6 +89,7 @@ class Player:
             self.action = HITTED
         if self.health < 1:
             self.action = DEAD
+            alive_players_num -= 1
         print('hitted:health', self.health)
     
     def apply_options(self, options):
@@ -174,9 +176,9 @@ def remove_player(id):
 def threaded_player(current_player):
     print('Игрок создан с id : ', current_player.id)
     start_state = {'current_player_id' : current_player.id}
-    global active_players_num
-    while active_players_num < 2:
-        print(active_players_num, 'кол-во игроков')
+    global connected_players_num
+    while connected_players_num < 2:
+        print(connected_players_num, 'кол-во игроков')
         time.sleep(1)
     for id, player in players.items():
         if player:
@@ -189,7 +191,9 @@ def threaded_player(current_player):
     str_start_state = json.dumps(start_state)
     current_player.socket.send(str_start_state.encode())
     print('player', current_player.id, 'start state:', str_start_state)
-    while True:                                                 #главный цикл игры
+                                                                            #TODO ожидание нажатия кнопки играть клиентом
+    alive_players_num += 1
+    while alive_players_num > 1:                                                                     #главный цикл игры
         try:
             raw_options = current_player.socket.recv(1024)
             str_options = raw_options.decode()
@@ -209,8 +213,9 @@ def threaded_player(current_player):
             current_player.socket.send(byte_players_state)
         except Exception as err:
             print('connection error : ', err)
+    
     remove_player(current_player.id)
-    active_players_num -= 1
+    connected_players_num -= 1
 
 
 while True:
@@ -220,7 +225,7 @@ while True:
         if not player_in_slot:
             player = Player(id, player_socket, GRAVITY)
             players[id] = player
-            active_players_num += 1
+            connected_players_num += 1
             threading.Thread(target=threaded_player, args=(player,)).start()
             break
     else:
