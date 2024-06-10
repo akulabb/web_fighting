@@ -43,6 +43,7 @@ players = {0 : None,
 		   3 : None,
 		   }
 
+max_players_num = 0
 connected_players_num = 0
 alive_players_num = 0
 
@@ -83,6 +84,7 @@ class Player:
             print('attack:enemy id', hitted_enemy.id)
     
     def hitted(self):
+        global alive_players_num
         self.hitted_delay = HITTED_DELAY
         if self.health > 0:
             self.health -= 5
@@ -176,10 +178,10 @@ def remove_player(id):
 def threaded_player(current_player):
     print('Игрок создан с id : ', current_player.id)
     start_state = {'current_player_id' : current_player.id}
-    global connected_players_num
-    while connected_players_num < 2:
-        print(connected_players_num, 'кол-во игроков')
-        time.sleep(1)
+    global connected_players_num, alive_players_num, max_players_num
+  #  while connected_players_num < 2:
+   #     print(connected_players_num, 'кол-во игроков')
+    #    time.sleep(1)
     for id, player in players.items():
         if player:
             start_state[id] = (player.dir,
@@ -193,7 +195,8 @@ def threaded_player(current_player):
     print('player', current_player.id, 'start state:', str_start_state)
                                                                             #TODO ожидание нажатия кнопки играть клиентом
     alive_players_num += 1
-    while alive_players_num > 1:                                                                     #главный цикл игры
+    max_players_num += 1
+    while True:                                                                     #главный цикл игры
         try:
             raw_options = current_player.socket.recv(1024)
             str_options = raw_options.decode()
@@ -213,7 +216,16 @@ def threaded_player(current_player):
             current_player.socket.send(byte_players_state)
         except Exception as err:
             print('connection error : ', err)
-    
+        if alive_players_num < 2 and max_players_num > 1:
+            print('GAME OVER', current_player.id)
+            print(max_players_num, 'max_players_num')
+            print(alive_players_num, 'alive_players_num')
+            current_player.socket.recv(1024)
+            for id, player in players.items():
+                if player:
+                    players_state[id] = 'finish'
+            max_players_num = 0
+            break
     remove_player(current_player.id)
     connected_players_num -= 1
 

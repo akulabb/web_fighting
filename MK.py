@@ -185,17 +185,24 @@ def start_game():
 
 def fight():
     print('файтеры', len(fighters))
-    while len(fighters) > 1:                              #TODO вместо количества должно быть здоровье
+    while True:
         for fighter in fighters:
             if fighter.id == current_fighter_id:
                 options = fighter.check_options()
                 game_state = server.get_game_state(options)
                 break
         for fighter in fighters:
-            fighter.apply_game_state(game_state.get(str(fighter.id)))
+            fighter_state = game_state.get(str(fighter.id))
+            print('FIGHTER STATE', fighter_state)
+            if fighter_state == 'finish':
+                return
+            if not fighter_state:
+                print('Потеряно соеденение. fighter_state отсутствует.')
+                return
+            fighter.apply_game_state(fighter_state)
         update()
     print('end')
-       
+    
 menu = Menu(screen,
             BACK_IMAGE_PATH, 
             ('играть', 'выйти'),

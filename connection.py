@@ -16,6 +16,7 @@ class Conection :
         return game_state
     
     def recv(self, ):
+        data = {}
         try:
             response = self.server.recv(1024)
        #     print('recv bytes', response)

@@ -27,7 +27,9 @@ class Fighter(epg.Sprite):
         self.direction = flip
         self.enemy = None
         self.id = id
-        self.health_bar = HealthBar(id=self.id, health=100)
+        health_bar_width = epg.WIDTH / 4 - 20
+        health_bar_x = int(x_pos - health_bar_width / 2)
+        self.health_bar = HealthBar(id=self.id, health=100, pos=(health_bar_x, 10), width=health_bar_width)
         self.speed = 10
         self.skin_index = 0
         self.animation_list = []
@@ -103,19 +105,18 @@ class Fighter(epg.Sprite):
 
 
 class HealthBar(epg.Label):
-    WIDTH = 400
     HEIGHT = 40
-    def __init__(self, id, health=100):
-        POSITIONS = ((10, 10), (epg.WIDTH - 10 - self.WIDTH, 10))
-        x, y = POSITIONS[id]
+    def __init__(self, id, pos, width, health=100):
+        self.width = width
+        x, y = pos
         super().__init__(text=id, x=x, y=y, val=health)
         
     
     def _get_surf(self, ):
-        raito = self.WIDTH/100
-        surface = pygame.Surface((self.WIDTH+4, self.HEIGHT+4))
-        pygame.draw.rect(surface, epg.BLACK, (0, 0, self.WIDTH, self.HEIGHT))
-        pygame.draw.rect(surface, epg.RED, (2, 2, self.WIDTH, self.HEIGHT))
+        raito = self.width/100
+        surface = pygame.Surface((self.width+4, self.HEIGHT+4))
+        pygame.draw.rect(surface, epg.BLACK, (0, 0, self.width, self.HEIGHT))
+        pygame.draw.rect(surface, epg.RED, (2, 2, self.width, self.HEIGHT))
         pygame.draw.rect(surface, epg.YELLOW, (2, 2, self.value * raito, self.HEIGHT))
         return surface
     
