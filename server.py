@@ -3,6 +3,7 @@ import threading
 import time
 import json
 
+ERROR = -1
 
 SCREEN_HEIGHT = 600
 SCREEN_WIDTH = 800
@@ -42,6 +43,8 @@ players = {0 : None,
 		   2 : None,
 		   3 : None,
 		   }
+
+game_started = False
 
 max_players_num = 0
 connected_players_num = 0
@@ -89,9 +92,10 @@ class Player:
         if self.health > 0:
             self.health -= 5
             self.action = HITTED
-        if self.health < 1:
+        if self.health < 1 and self.action != DEAD:
             self.action = DEAD
             alive_players_num -= 1
+            print(f'player: {self.id} dead, alive_players_num{alive_players_num}')
         print('hitted:health', self.health)
     
     def apply_options(self, options):
@@ -170,15 +174,49 @@ class Rect:
         
 
 def remove_player(id):
-	players[id].socket.close()
-	players[id] = None
-	print('игрок закончился с id : ', id)
+    global connected_players_num
+    players[id].socket.close()
+    players[id] = None
+    print('игрок закончился с id : ', id)
+    connected_players_num -= 1
 
+def send(data, client_socket):
+    try:
+        str_data = json.dumps(data)
+        byte_data = str_data.encode()
+        client_socket.send(byte_data)
+    except Exception as err:
+        print('connection error : ', err)
+
+def recieve(client_socket,):
+    try:
+        raw_data = client_socket.recv(1024)
+        str_data = raw_data.decode()
+        data = json.loads(str_data)
+    except Exception as err:
+        print(err)
+        data = ERROR
+    finally:
+        return data
+
+def threaded_referee():
+    global game_started, alive_players_num, max_players_num
+    while True:
+        if game_started:
+            print('Referee: game started!')
+            while threading.active_count() > 2:
+                time.sleep(0.15)
+            game_started = False
+            alive_players_num = 0
+            max_players_num = 0
+            print('Referee: game over!')
+        else:
+            time.sleep(0.25)
 
 def threaded_player(current_player):
     print('Игрок создан с id : ', current_player.id)
     start_state = {'current_player_id' : current_player.id}
-    global connected_players_num, alive_players_num, max_players_num
+    global connected_players_num, alive_players_num, max_players_num, game_started
   #  while connected_players_num < 2:
    #     print(connected_players_num, 'кол-во игроков')
     #    time.sleep(1)
@@ -190,32 +228,26 @@ def threaded_player(current_player):
                                player.rect.width,
                                player.rect.height,
                                )
-    str_start_state = json.dumps(start_state)
-    current_player.socket.send(str_start_state.encode())
-    print('player', current_player.id, 'start state:', str_start_state)
+    send(start_state, current_player.socket)
+    print('player', current_player.id, 'start state:', start_state)
                                                                             #TODO ожидание нажатия кнопки играть клиентом
     alive_players_num += 1
     max_players_num += 1
-    while True:                                                                     #главный цикл игры
-        try:
-            raw_options = current_player.socket.recv(1024)
-            str_options = raw_options.decode()
-            options = json.loads(str_options)
-        except Exception as err:
+    print(f'alive_players_num:{alive_players_num}, max_players_num{max_players_num}')
+    while True:                                                    #главный цикл игры
+        options = recieve(current_player.socket)
+        if options == ERROR:
             print('Потерянно соеденение с : ', current_player.id, 'игрок отключился')
+            alive_players_num -= 1
             break
+        game_started = True
         current_player.apply_options(options)
         players_state = {}
         for id, player in players.items():
             if player:
                 players_state[id] = player.get_self_state()
  #       players_state
-        try:
-            str_players_state = json.dumps(players_state)
-            byte_players_state = str_players_state.encode()
-            current_player.socket.send(byte_players_state)
-        except Exception as err:
-            print('connection error : ', err)
+        send(players_state, current_player.socket)
         if alive_players_num < 2 and max_players_num > 1:
             print('GAME OVER', current_player.id)
             print(max_players_num, 'max_players_num')
@@ -225,10 +257,12 @@ def threaded_player(current_player):
                 if player:
                     players_state[id] = 'finish'
             max_players_num = 0
+            alive_players_num = 0
+            send(players_state, current_player.socket)
             break
     remove_player(current_player.id)
-    connected_players_num -= 1
 
+threading.Thread(target=threaded_referee).start()
 
 while True:
     player_socket, adress = start_socket.accept()

@@ -10,6 +10,9 @@ import threading
 epg.AUTO_UPDATE = False
 SCREEN_HEIGHT = epg.HEIGHT = 600
 SCREEN_WIDTH = epg.WIDTH = 800
+SPRITE_WIDTH = 130
+SPRITE_HEIGHT = 130
+
 FPS = 30
 BALL_IMAGE_PATH = 'photos/ball.png'
 EARTH_IMAGE_PATH = 'photos/earth.png'
@@ -167,25 +170,31 @@ def start_game():
     start_game_state = server.get_start()
     global current_fighter_id
     current_fighter_id = start_game_state.pop('current_player_id')
-    for id, player_pos in start_game_state.items():
+    create_fighters(start_game_state)
+    menu.enable_button('играть')
+
+def create_fighters(game_state):
+    global fighters
+#    fighters = []
+    for id, player_pos in game_state.items():
         print(f'fighter {id} created')
         dir, x_pos, y_pos, wigth, height = player_pos
         fighters.append(Fighter(animation_pathes=FIGHTER_IMAGE_PATHES,
                         x_pos=x_pos,
                         y_pos=y_pos,
-                        flip = dir,
+                        flip=dir,
                         wigth=wigth, 
                         height=height,
                         ground_level=ground_level,
                         gravity=GRAVITY,
                         id=int(id)
                         ))
-    menu.enable_button('играть')
-
+ #   return fighters
 
 def fight():
     print('файтеры', len(fighters))
     while True:
+        game_state = {}
         for fighter in fighters:
             if fighter.id == current_fighter_id:
                 options = fighter.check_options()
@@ -193,13 +202,32 @@ def fight():
                 break
         for fighter in fighters:
             fighter_state = game_state.get(str(fighter.id))
-            print('FIGHTER STATE', fighter_state)
+    #        print('FIGHTER STATE', fighter_state)
             if fighter_state == 'finish':
-                return
-            if not fighter_state:
+                print('Пора заканчивать.')
+                return None
+            elif not fighter_state:
                 print('Потеряно соеденение. fighter_state отсутствует.')
-                return
+                print(f'game_state: {game_state}')
+                continue
             fighter.apply_game_state(fighter_state)
+        if len(game_state) > len(fighters):
+            print('new fighters on server')
+            new_fighters = {}
+            for fighter_id in game_state.keys():
+                for fighter in fighters:
+                    print('fighter_id:', fighter_id, 'fighter.id:', fighter.id)
+                    if fighter_id != str(fighter.id):
+                        new_fighter_state = game_state.get(fighter_id)
+                        new_fighter_state = (new_fighter_state[4],
+                                             new_fighter_state[0],
+                                             new_fighter_state[1],
+                                             SPRITE_WIDTH,
+                                             SPRITE_HEIGHT,
+                                            )
+                        print('new_fighter_state:', new_fighter_state)
+                        new_fighters[fighter_id] = new_fighter_state
+            create_fighters(new_fighters)
         update()
     print('end')
     
