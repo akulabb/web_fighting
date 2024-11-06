@@ -99,13 +99,14 @@ class Player:
     def hitted(self):
         global alive_players_num
         self.hitted_delay = HITTED_DELAY
-        if self.health > 0:
-            self.health -= 5
-            self.action = HITTED
-        if self.health < 1 and self.action != DEAD:
-            self.action = DEAD
-            alive_players_num -= 1
-            print(f'player: {self.id} dead, alive_players_num: {alive_players_num}')
+        if self.mode == IN_GAME:
+            if self.health > 0:
+                self.health -= 5
+                self.action = HITTED
+            if self.health < 1 and self.action != DEAD:
+                self.action = DEAD
+                alive_players_num -= 1
+                print(f'player: {self.id} dead, alive_players_num: {alive_players_num}')
     #    print('hitted:health', self.health)
     
     def apply_options(self, options):

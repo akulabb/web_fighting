@@ -8,6 +8,16 @@ SCREEN_WIDTH = 800
 RIGHT = False
 LEFT = True
 
+HEALTHBAR_OFFSET = int(SCREEN_WIDTH / 7)
+
+SIDE_HEALTHBARS_DISTANCE = SCREEN_WIDTH - 2*HEALTHBAR_OFFSET
+
+HEALTHBAR_POSITIONS = (HEALTHBAR_OFFSET, 
+                       SCREEN_WIDTH - HEALTHBAR_OFFSET,
+                       SIDE_HEALTHBARS_DISTANCE / 3 + HEALTHBAR_OFFSET,
+                       (SIDE_HEALTHBARS_DISTANCE / 3) * 2 + HEALTHBAR_OFFSET,
+                    )
+
 STAY = 0
 GO = 1
 JUMP = 2
@@ -28,7 +38,7 @@ class Fighter(epg.Sprite):
         self.enemy = None
         self.id = id
         health_bar_width = epg.WIDTH / 4 - 20
-        health_bar_x = int(x_pos - health_bar_width / 2)
+        health_bar_x = int(HEALTHBAR_POSITIONS[id] - health_bar_width / 2)
         self.health_bar = HealthBar(id=self.id, health=100, pos=(health_bar_x, 10), width=health_bar_width)
         self.speed = 10
         self.skin_index = 0
