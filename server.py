@@ -25,6 +25,9 @@ ATTACK = 3
 HITTED = 4
 DEAD = 5
 
+READY = 1
+IN_GAME = 0
+
 
 ATTACK_DELAY = 5
 HITTED_DELAY = 5
@@ -67,6 +70,13 @@ class Player:
         self.fall_speed = 0
         self.jumping = False
         self.gravity = gravity
+        self.mode = READY
+    
+    def set_start(self,):
+        self.rect.update(START_POSITIONS[self.id], self.y_pos)
+        self.health = 100
+        self.action = STAY
+        self.mode = READY
     
     def attack(self,):
         self.attack_delay = ATTACK_DELAY
@@ -81,10 +91,10 @@ class Player:
                      self.y_pos,
                      )
         
-        print('starting apply hitted')
+   #     print('starting apply hitted')
         for hitted_enemy in hit.get_hitted(self.id): 
             hitted_enemy.hitted()
-            print('attack:enemy id', hitted_enemy.id)
+         #   print('attack:enemy id', hitted_enemy.id)
     
     def hitted(self):
         global alive_players_num
@@ -95,8 +105,8 @@ class Player:
         if self.health < 1 and self.action != DEAD:
             self.action = DEAD
             alive_players_num -= 1
-            print(f'player: {self.id} dead, alive_players_num{alive_players_num}')
-        print('hitted:health', self.health)
+            print(f'player: {self.id} dead, alive_players_num: {alive_players_num}')
+    #    print('hitted:health', self.health)
     
     def apply_options(self, options):
         dx = 0
@@ -129,7 +139,7 @@ class Player:
                     self.jumping = True
                     self.action = JUMP
                 if options.get('hit') and not self.attack_delay:
-                    print('call attack')
+             #       print('call attack')
                     self.action = ATTACK
                     self.attack()
                 dx += options.get('move')
@@ -142,7 +152,7 @@ class Player:
         self.rect.update(pos_x, pos_y)
         
     def get_self_state(self):
-        return (self.rect.center_x, self.rect.center_y, self.health, self.action, self.dir)
+        return (self.rect.center_x, self.rect.center_y, self.health, self.action, self.dir, self.mode)
     
 
 class Rect:
@@ -168,10 +178,16 @@ class Rect:
                         player.rect.left <= self.right and
                         player.rect.top <= self.bottom and
                         player.rect.bottom >= self.top):
-                    print('enemys append')
+         #           print('enemys append')
                     enemies.append(player)
         return enemies
         
+def players_is_ready():
+    result = True
+    for player in players.values():
+        if player:
+            result = result and bool(player.mode)
+    return result
 
 def remove_player(id):
     global connected_players_num
@@ -199,67 +215,77 @@ def recieve(client_socket,):
     finally:
         return data
 
+def get_players_state():
+    global players
+    players_state = {}
+    for id, player in players.items():
+        if player:
+            players_state[id] = player.get_self_state()
+    return players_state
+
 def threaded_referee():
     global game_started, alive_players_num, max_players_num
     while True:
         if game_started:
             print('Referee: game started!')
-            while threading.active_count() > 2:
+            
+            while not players_is_ready():
                 time.sleep(0.15)
             game_started = False
             alive_players_num = 0
             max_players_num = 0
             print('Referee: game over!')
+            print()
         else:
             time.sleep(0.25)
 
 def threaded_player(current_player):
     print('Игрок создан с id : ', current_player.id)
-    start_state = {'current_player_id' : current_player.id}
-    global connected_players_num, alive_players_num, max_players_num, game_started
-  #  while connected_players_num < 2:
-   #     print(connected_players_num, 'кол-во игроков')
-    #    time.sleep(1)
-    for id, player in players.items():
-        if player:
-            start_state[id] = (player.dir,
-                               player.rect.center_x, 
-                               player.rect.center_y, 
-                               player.rect.width,
-                               player.rect.height,
-                               )
-    send(start_state, current_player.socket)
-    print('player', current_player.id, 'start state:', start_state)
-                                                                            #TODO ожидание нажатия кнопки играть клиентом
-    alive_players_num += 1
-    max_players_num += 1
-    print(f'alive_players_num:{alive_players_num}, max_players_num{max_players_num}')
-    while True:                                                    #главный цикл игры
-        options = recieve(current_player.socket)
-        if options == ERROR:
-            print('Потерянно соеденение с : ', current_player.id, 'игрок отключился')
-            alive_players_num -= 1
-            break
-        game_started = True
-        current_player.apply_options(options)
-        players_state = {}
+    player_connected = True
+    while player_connected:
+        current_player.set_start()
+        print(f'Player {current_player.id} is ready!')
+        start_state = {'current_player_id' : current_player.id}
+        global connected_players_num, alive_players_num, max_players_num, game_started
+      #  while connected_players_num < 2:
+       #     print(connected_players_num, 'кол-во игроков')
+        #    time.sleep(1)
         for id, player in players.items():
             if player:
-                players_state[id] = player.get_self_state()
- #       players_state
-        send(players_state, current_player.socket)
-        if alive_players_num < 2 and max_players_num > 1:
-            print('GAME OVER', current_player.id)
-            print(max_players_num, 'max_players_num')
-            print(alive_players_num, 'alive_players_num')
-            current_player.socket.recv(1024)
-            for id, player in players.items():
-                if player:
-                    players_state[id] = 'finish'
-            max_players_num = 0
-            alive_players_num = 0
-            send(players_state, current_player.socket)
-            break
+                start_state[id] = (player.dir,
+                                   player.rect.center_x, 
+                                   player.rect.center_y, 
+                                   player.rect.width,
+                                   player.rect.height,
+                                   )
+        send(start_state, current_player.socket)
+        print('player id:', current_player.id, 'start state:', start_state)
+        start_button_push = recieve(current_player.socket)                  # TODO сделать цикл try except
+        alive_players_num += 1
+        max_players_num += 1
+        game_started = True
+        print(f'Player {current_player.id}: start main cycle. alive_players_num: {alive_players_num}, max_players_num: {max_players_num}')
+      #  send(get_players_state(), current_player.socket)
+        while True:                                                    #главный цикл игры
+            options = recieve(current_player.socket)
+            current_player.mode = IN_GAME
+            if options == ERROR:
+                print('Потерянно соеденение с : ', current_player.id, 'игрок отключился')
+                alive_players_num -= 1
+                player_connected = False
+                break
+            current_player.apply_options(options)
+            send(get_players_state(), current_player.socket)
+            if alive_players_num < 2 and max_players_num > 1:
+                print('GAME OVER', current_player.id)
+                print(max_players_num, 'max_players_num')
+                print(alive_players_num, 'alive_players_num')
+                current_player.socket.recv(1024)
+             #   players_state = 'finish'
+                max_players_num = 0
+                alive_players_num = 0
+                send('finish', current_player.socket)
+                break
     remove_player(current_player.id)
 
 threading.Thread(target=threaded_referee).start()

@@ -16,9 +16,9 @@ HITTED = 4
 DEAD = 5
 
 class Fighter(epg.Sprite):
-    def __init__(self, animation_pathes, x_pos, y_pos, flip, wigth, height, ground_level, gravity, id, img=epg.GREEN):
+    def __init__(self, animation_pathes, x_pos, y_pos, flip, wigth, height, ground_level, gravity, id, img=epg.GREEN, show=True):
         pos = (x_pos, y_pos)
-        super().__init__(img=animation_pathes[0], pos=pos, w=wigth, h=height, savescale=False)
+        super().__init__(img=animation_pathes[0], pos=pos, w=wigth, h=height, savescale=False, show=show)
         self.gravity = gravity
         self.fall_speed = 0
         self.ground_level = ground_level
@@ -90,10 +90,14 @@ class Fighter(epg.Sprite):
         self.set_skin(DEAD)
     
     def apply_game_state(self, state):
-        x_pos, y_pos, health, action, self.direction = state
+        x_pos, y_pos, health, action, self.direction, hide = state
         self.move_to((x_pos, y_pos))
         self.health_bar.set_value(health)
         self.actions[action]()
+        if hide:
+            self.hide()
+        else:
+            self.show()
     
     def set_skin(self, skin_index):
         if self.skins_dir != self.direction:

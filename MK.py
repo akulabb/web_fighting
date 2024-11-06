@@ -168,12 +168,13 @@ ground_level = SCREEN_HEIGHT - 254
 
 def start_game():
     start_game_state = server.get_start()
+    print(f'start game state:{start_game_state}')
     global current_fighter_id
     current_fighter_id = start_game_state.pop('current_player_id')
-    create_fighters(start_game_state)
+    create_fighters(start_game_state, show=False)
     menu.enable_button('играть')
 
-def create_fighters(game_state):
+def create_fighters(game_state, show=True):
     global fighters
 #    fighters = []
     for id, player_pos in game_state.items():
@@ -187,7 +188,8 @@ def create_fighters(game_state):
                         height=height,
                         ground_level=ground_level,
                         gravity=GRAVITY,
-                        id=int(id)
+                        id=int(id),
+                        show=show,
                         ))
  #   return fighters
 
@@ -200,13 +202,15 @@ def fight():
                 options = fighter.check_options()
                 game_state = server.get_game_state(options)
                 break
+        if game_state == 'finish':
+            for fighter in fighters:
+                fighter.hide()
+            print('Раунд окончен.')
+            return None
         for fighter in fighters:
             fighter_state = game_state.get(str(fighter.id))
     #        print('FIGHTER STATE', fighter_state)
-            if fighter_state == 'finish':
-                print('Пора заканчивать.')
-                return None
-            elif not fighter_state:
+            if not fighter_state:
                 print('Потеряно соеденение. fighter_state отсутствует.')
                 print(f'game_state: {game_state}')
                 continue
@@ -231,6 +235,14 @@ def fight():
         update()
     print('end')
     
+label_game_over = epg.Label(text='GAME OVER',
+                        x=WIDTH_HALF,
+                        y=HEIGHT_HALF,
+                        size=50,
+                        center=True,
+                        show=False,
+                        )
+    
 menu = Menu(screen,
             BACK_IMAGE_PATH, 
             ('играть', 'выйти'),
@@ -240,15 +252,23 @@ menu = Menu(screen,
             button_margin=205,
             )
 
-menu.enable_button('играть', False)
+while True:
+    menu.enable_button('играть', False)
 
-threading.Thread(target=start_game).start()
+    threading.Thread(target=start_game).start()
+    
+    print(f'start menu')
+    choice = menu.get_choice()
 
-choice = menu.get_choice()
+    if choice == 'выйти':
+        break
 
-if choice == 'выйти':
-    exit()
-
-if choice == 'играть':
-    screen.set_background(EARTH_IMAGE_PATH)
-    fight()
+    if choice == 'играть':
+        server.send('Игра началась!')
+        screen.set_background(EARTH_IMAGE_PATH)
+        fight()
+        fighters = []
+        label_game_over.show()
+        time.sleep(5)
+        label_game_over.hide()
+exit()
