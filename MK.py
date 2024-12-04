@@ -6,6 +6,8 @@ import connection
 import os
 import time
 import threading
+import inspect
+import logging as mainlog
 
 epg.AUTO_UPDATE = False
 SCREEN_HEIGHT = epg.HEIGHT = 600
@@ -41,7 +43,35 @@ BUTTON_DISABLED_IMAGE_PATH = 'photos/disabled.jpeg'
 SERVER = 'localhost'
 PORT = 5555
 
+LOGGING_LEVEL = mainlog.DEBUG
+NOT_LOGGING_FUNCTION = ('get_pressed', 'taped', 'check_options')
 
+mainlog.basicConfig(level=LOGGING_LEVEL,
+                format='%(levelname)s %(message)s')
+log = mainlog.getLogger('log_to_file')
+fhandler = mainlog.FileHandler(filename='log.txt', mode='a')
+formatter = mainlog.Formatter('%(asctime)s, %(levelname)s, %(message)s, %(funcName)s, %(lineno)s, %(filename)s')
+
+fhandler.setFormatter(formatter)
+log.addHandler(fhandler)
+
+def to_log(func):
+    def sub_func(*args, **kwargs):
+        if not func.__name__ in NOT_LOGGING_FUNCTION:
+            log.info(f"** {func.__name__} **")
+        result = func(*args, **kwargs)
+        return result
+    return sub_func
+
+def log_class(class_to_log, ):
+    class_name = class_to_log.__name__
+    for name, method in inspect.getmembers(class_to_log):
+        if inspect.isfunction(method):
+            setattr(class_to_log, name, to_log(method))
+    return class_to_log
+
+
+@log_class
 class Menu():
     def __init__(self, screen,
                  menu_background_img_path, 
@@ -107,6 +137,7 @@ class Menu():
                 button.enable(enable)
 
 
+@log_class
 class Button(epg.Sprite, epg.Label):
     RELEASED = 0
     PRESSED = 1
@@ -166,6 +197,7 @@ current_fighter_id = 0
 
 ground_level = SCREEN_HEIGHT - 254
 
+@to_log
 def start_game():
     start_game_state = server.get_start()
     print(f'start game state:{start_game_state}')
@@ -174,6 +206,7 @@ def start_game():
     create_fighters(start_game_state, show=False)
     menu.enable_button('играть')
 
+@to_log
 def create_fighters(game_state, show=True):
     global fighters
 #    fighters = []
@@ -192,7 +225,7 @@ def create_fighters(game_state, show=True):
                         show=show,
                         ))
  #   return fighters
-
+@to_log
 def fight():
     print('файтеры', len(fighters))
     while True:
@@ -209,7 +242,7 @@ def fight():
             return None
         for fighter in fighters:
             fighter_state = game_state.get(str(fighter.id))
-    #        print('FIGHTER STATE', fighter_state)
+            print('FIGHTER STATE', fighter_state)
             if not fighter_state:
                 print('Потеряно соеденение. fighter_state отсутствует.')
                 print(f'game_state: {game_state}')
@@ -269,6 +302,7 @@ while True:
         fight()
         fighters = []
         label_game_over.show()
+        update()
         time.sleep(5)
         label_game_over.hide()
 exit()

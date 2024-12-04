@@ -1,7 +1,9 @@
+import logging as mainlog
 import socket
 import threading
 import time
 import json
+import inspect
 
 ERROR = -1
 
@@ -28,6 +30,17 @@ DEAD = 5
 READY = 1
 IN_GAME = 0
 
+LOGGING_LEVEL = mainlog.DEBUG
+NOT_LOGGING_FUNCTION = ('apply_options', 'send_data', 'recieve', 'update', 'get_self_state')
+
+mainlog.basicConfig(level=LOGGING_LEVEL,
+                format='%(levelname)s %(message)s')
+log = mainlog.getLogger('log_to_file')
+fhandler = mainlog.FileHandler(filename='log.txt', mode='a')
+formatter = mainlog.Formatter('%(asctime)s, %(levelname)s, %(message)s, %(funcName)s, %(lineno)s, %(filename)s')
+
+fhandler.setFormatter(formatter)
+log.addHandler(fhandler)
 
 ATTACK_DELAY = 5
 HITTED_DELAY = 5
@@ -39,7 +52,7 @@ GRAVITY = 2
 start_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 start_socket.bind((SERVER, PORT))
 start_socket.listen(2)
-print('Сервер запущен')
+log.info('Сервер запущен')
 
 players = {0 : None,
 		   1 : None,
@@ -53,6 +66,23 @@ max_players_num = 0
 connected_players_num = 0
 alive_players_num = 0
 
+def to_log(func):
+    def sub_func(*args, **kwargs):
+        if not func.__name__ in NOT_LOGGING_FUNCTION:
+            log.info(f"** {func.__name__} **")
+        result = func(*args, **kwargs)
+        return result
+    return sub_func
+
+def log_class(class_to_log, ):
+    class_name = class_to_log.__name__
+    for name, method in inspect.getmembers(class_to_log):
+        if inspect.isfunction(method):
+            setattr(class_to_log, name, to_log(method))
+    return class_to_log
+
+
+@log_class
 class Player:
     def __init__(self, id, socket, gravity):
         self.attack_delay = 0
@@ -65,13 +95,13 @@ class Player:
         self.rect = Rect(PLAYER_SIZE, 
                          START_POSITIONS[self.id], 
                          self.y_pos
-                         )
+                        )
         self.socket = socket
         self.fall_speed = 0
         self.jumping = False
         self.gravity = gravity
         self.mode = READY
-    
+
     def set_start(self,):
         self.rect.update(START_POSITIONS[self.id], self.y_pos)
         self.health = 100
@@ -182,7 +212,8 @@ class Rect:
          #           print('enemys append')
                     enemies.append(player)
         return enemies
-        
+
+
 def players_is_ready():
     result = True
     for player in players.values():
@@ -190,11 +221,12 @@ def players_is_ready():
             result = result and bool(player.mode)
     return result
 
+@to_log
 def remove_player(id):
     global connected_players_num
     players[id].socket.close()
     players[id] = None
-    print('игрок закончился с id : ', id)
+    log.debug(f'игрок закончился с id : {id}')
     connected_players_num -= 1
 
 def send(data, client_socket):
@@ -203,7 +235,7 @@ def send(data, client_socket):
         byte_data = str_data.encode()
         client_socket.send(byte_data)
     except Exception as err:
-        print('connection error : ', err)
+        log.error(f'connection error : {err}')
 
 def recieve(client_socket,):
     try:
@@ -211,12 +243,12 @@ def recieve(client_socket,):
         str_data = raw_data.decode()
         data = json.loads(str_data)
     except Exception as err:
-        print(err)
+        log.error(f'{err}')
         data = ERROR
     finally:
         return data
 
-def get_players_state():
+def get_game_state():
     global players
     players_state = {}
     for id, player in players.items():
@@ -224,28 +256,30 @@ def get_players_state():
             players_state[id] = player.get_self_state()
     return players_state
 
+@to_log
 def threaded_referee():
     global game_started, alive_players_num, max_players_num
     while True:
         if game_started:
-            print('Referee: game started!')
+            log.info('Referee: game started!')
             
             while not players_is_ready():
                 time.sleep(0.15)
             game_started = False
             alive_players_num = 0
             max_players_num = 0
-            print('Referee: game over!')
+            log.info('Referee: game over!')
             print()
         else:
             time.sleep(0.25)
 
+@to_log
 def threaded_player(current_player):
-    print('Игрок создан с id : ', current_player.id)
+    log.debug(f'Игрок создан с id : {current_player.id}')
     player_connected = True
     while player_connected:
         current_player.set_start()
-        print(f'Player {current_player.id} is ready!')
+        log.info(f'Player {current_player.id} is ready!')
         start_state = {'current_player_id' : current_player.id}
         global connected_players_num, alive_players_num, max_players_num, game_started
       #  while connected_players_num < 2:
@@ -260,27 +294,26 @@ def threaded_player(current_player):
                                    player.rect.height,
                                    )
         send(start_state, current_player.socket)
-        print('player id:', current_player.id, 'start state:', start_state)
+        log.debug(f'player id: {current_player.id} start state: {start_state}')
         start_button_push = recieve(current_player.socket)                  # TODO сделать цикл try except
         alive_players_num += 1
         max_players_num += 1
         game_started = True
-        print(f'Player {current_player.id}: start main cycle. alive_players_num: {alive_players_num}, max_players_num: {max_players_num}')
-      #  send(get_players_state(), current_player.socket)
+        log.debug(f'Player {current_player.id}: start main cycle. alive_players_num: {alive_players_num}, max_players_num: {max_players_num}')
         while True:                                                    #главный цикл игры
             options = recieve(current_player.socket)
             current_player.mode = IN_GAME
             if options == ERROR:
-                print('Потерянно соеденение с : ', current_player.id, 'игрок отключился')
+                log.error(f'Потерянно соеденение с : {current_player.id} игрок отключился')
                 alive_players_num -= 1
                 player_connected = False
                 break
             current_player.apply_options(options)
-            send(get_players_state(), current_player.socket)
+            send(get_game_state(), current_player.socket)
             if alive_players_num < 2 and max_players_num > 1:
-                print('GAME OVER', current_player.id)
-                print(max_players_num, 'max_players_num')
-                print(alive_players_num, 'alive_players_num')
+                log.info(f'GAME OVER {current_player.id}')
+                log.debug(f'{max_players_num} max_players_num')
+                log.debug(f'{alive_players_num} alive_players_num')
                 current_player.socket.recv(1024)
              #   players_state = 'finish'
                 max_players_num = 0
@@ -289,19 +322,19 @@ def threaded_player(current_player):
                 break
     remove_player(current_player.id)
 
-threading.Thread(target=threaded_referee).start()
+threading.Thread(target=threaded_referee, daemon=True).start()
 
 while True:
     player_socket, adress = start_socket.accept()
-    print('Подключился игрок с адресом : ', adress)
+    log.info(f'Подключился игрок с адресом : {adress}')
     for id, player_in_slot in players.items():
         if not player_in_slot:
             player = Player(id, player_socket, GRAVITY)
             players[id] = player
             connected_players_num += 1
-            threading.Thread(target=threaded_player, args=(player,)).start()
+            threading.Thread(target=threaded_player, args=(player,), daemon=True).start()
             break
     else:
-        print('Максимальное кичество игроков')
+        print('Максимальное количество игроков')
         player_socket.close()
         

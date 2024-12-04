@@ -1,7 +1,8 @@
 import easy_pygame as epg
 from easy_pygame import UP, DOWN, LEFT, RIGHT, BORDER
 import pygame
-
+import inspect
+import logging as mainlog
 
 SCREEN_HEIGHT = 600
 SCREEN_WIDTH = 800
@@ -25,6 +26,35 @@ ATTACK = 3
 HITTED = 4
 DEAD = 5
 
+LOGGING_LEVEL = mainlog.DEBUG
+NOT_LOGGING_FUNCTION = ('')
+
+mainlog.basicConfig(level=LOGGING_LEVEL,
+                format='%(levelname)s %(message)s')
+log = mainlog.getLogger('log_to_file')
+fhandler = mainlog.FileHandler(filename='log.txt', mode='a')
+formatter = mainlog.Formatter('%(asctime)s, %(levelname)s, %(message)s, %(funcName)s, %(lineno)s, %(filename)s')
+
+fhandler.setFormatter(formatter)
+log.addHandler(fhandler)
+
+def to_log(func):
+    def sub_func(*args, **kwargs):
+        if not func.__name__ in NOT_LOGGING_FUNCTION:
+            log.info(f"** {func.__name__} **")
+        result = func(*args, **kwargs)
+        return result
+    return sub_func
+
+def log_class(class_to_log):
+    class_name = class_to_log.__name__
+    for name, method in inspect.getmembers(class_to_log):
+        if inspect.isfunction(method):
+            setattr(class_to_log, name, to_log(method))
+    return class_to_log
+
+
+@log_class
 class Fighter(epg.Sprite):
     def __init__(self, animation_pathes, x_pos, y_pos, flip, wigth, height, ground_level, gravity, id, img=epg.GREEN, show=True):
         pos = (x_pos, y_pos)
@@ -118,6 +148,7 @@ class Fighter(epg.Sprite):
         self.skin_index = skin_index
 
 
+@log_class
 class HealthBar(epg.Label):
     HEIGHT = 40
     def __init__(self, id, pos, width, health=100):
