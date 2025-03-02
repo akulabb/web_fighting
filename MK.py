@@ -28,12 +28,12 @@ GRAVITY = 2
 #EARTH = 716
 
 PROJECT_DIR = os.getcwd()
-FIGHTER_IMAGE_PATHES = (os.path.join(PROJECT_DIR, 'photos\\stay.png'),
-                        os.path.join(PROJECT_DIR, 'photos\\go.png'),
-                        os.path.join(PROJECT_DIR, 'photos\\jump.png'),
-                        os.path.join(PROJECT_DIR, 'photos\\attack.png'),
-                        os.path.join(PROJECT_DIR, 'photos\\hitted.png'),
-                        os.path.join(PROJECT_DIR, 'photos\\dead.png'),
+FIGHTER_IMAGE_PATHES = (os.path.join(PROJECT_DIR, 'photos/stay.png'),
+                        os.path.join(PROJECT_DIR, 'photos/go.png'),
+                        os.path.join(PROJECT_DIR, 'photos/jump.png'),
+                        os.path.join(PROJECT_DIR, 'photos/attack.png'),
+                        os.path.join(PROJECT_DIR, 'photos/hitted.png'),
+                        os.path.join(PROJECT_DIR, 'photos/dead.png'),
                         )
 
 BUTTON_RELEASED_IMAGE_PATH = 'photos/released.jpeg'
@@ -182,7 +182,7 @@ def start_game():
 
 def get_str_time(int_time):
     seconds = int_time % 60
-    minutes = int_time // 60
+    minutes = int_time / 60
     str_time = f'{minutes} : {seconds}'
     return str_time
 
@@ -271,11 +271,11 @@ label_timer = epg.Label(text='',
     
 menu = Menu(screen,
             BACK_IMAGE_PATH, 
-            ('играть', 'выйти', 'Ринг на 2', 'Ринг на 3', 'Ринг на 4'),
+            ('Ринг на 2', 'Ринг на 3', 'Ринг на 4', 'выйти'),
             (BUTTON_RELEASED_IMAGE_PATH, BUTTON_PRESSED_IMAGE_PATH, BUTTON_DISABLED_IMAGE_PATH),
-            (100, 100),
+            (90, 90),
             button_order='h',
-            button_margin=80,
+            button_margin=70,
             )
 
 while True:
@@ -289,8 +289,9 @@ while True:
     if choice == 'выйти':
         break
 
-    if choice == 'играть':
-        server.send('Игра началась!')
+    else:
+        ring_num = choice[-1]
+        server.send(ring_num)
         screen.set_background(EARTH_IMAGE_PATH)
         label_timer.show()
         fight()
