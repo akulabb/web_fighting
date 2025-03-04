@@ -41,7 +41,7 @@ BUTTON_PRESSED_IMAGE_PATH = 'photos/pressed.jpeg'
 BUTTON_DISABLED_IMAGE_PATH = 'photos/disabled.jpeg'
 
 SERVER = 'localhost'
-PORT = 5555
+PORT = 55556
 
 
 #@log_class
@@ -182,7 +182,7 @@ def start_game():
 
 def get_str_time(int_time):
     seconds = int_time % 60
-    minutes = int_time / 60
+    minutes = int_time // 60
     str_time = f'{minutes} : {seconds}'
     return str_time
 

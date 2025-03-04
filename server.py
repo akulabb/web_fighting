@@ -19,7 +19,7 @@ START_POSITIONS = (int(SCREEN_WIDTH / 5),
                    )
 
 SERVER = 'localhost'
-PORT = 5555
+PORT = 55556
 
 FIGHT_TIME = 600
 timer = FIGHT_TIME
@@ -106,6 +106,7 @@ class Player(threading.Thread):
         self.gravity = gravity
         self.mode = READY
         self.extra_socket = None
+        self.update_timer_value = 0
     
     def add_extra_socket(self, extra_socket):
         self.extra_socket=extra_socket
@@ -244,7 +245,7 @@ class Player(threading.Thread):
                     player_connected = False
                     break
                 self.apply_options(options)
-                send(get_game_state(), self.socket)
+                send(ring.get_game_state(self.update_timer_value), self.socket)
                 if ring.game_over():
                     self.say('GAME OVER')
                     self.socket.recv(1024)
@@ -305,16 +306,28 @@ class Ring(threading.Thread):
         while True:
             self.waiting_for_players()
             self.say('game started!')
-            timer = self.playing_time
+            self.timer = self.playing_time
             while not waiting_players() and timer > 0:              #TODO разобраться с waiting_players()
                 time.sleep(1)
-                timer -= 1
+                self.timer -= 1
+                self.update_timer_value = True
+                for player in self.players:
+                    player.update_timer_value = True
             self.game_started = False
             self.alive_players_num = 0
             self.max_players_num = 0
             self.say('game over!')
             print()
-        
+    
+    def get_game_state(self, update_timer=False):
+        game_state = {"timer" : None}
+        for player in self.players:
+            game_state[player.id] = player.get_self_state()
+        if update_timer:
+            game_state['timer'] = self.timer
+            recent_time = self.timer
+        return game_state
+    
     def waiting_for_players(self, ):
         while len(self.players) < self.players_num:
             time.sleep(0.25)
@@ -420,7 +433,7 @@ def threaded_player(current_player):
                 player_connected = False
                 break
             current_player.apply_options(options)
-            send(get_game_state(), current_player.socket)
+            send(get_game_state(self.update_timer_value), current_player.socket)
             if alive_players_num < 2 and max_players_num > 1:
                 log.info(f'GAME OVER {current_player.id}')
                 log.debug(f'{max_players_num} max_players_num')
