@@ -41,7 +41,7 @@ BUTTON_PRESSED_IMAGE_PATH = 'photos/pressed.jpeg'
 BUTTON_DISABLED_IMAGE_PATH = 'photos/disabled.jpeg'
 
 SERVER = 'localhost'
-PORT = 55556
+PORT = 5555
 
 
 #@log_class

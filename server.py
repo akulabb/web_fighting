@@ -19,7 +19,7 @@ START_POSITIONS = (int(SCREEN_WIDTH / 5),
                    )
 
 SERVER = 'localhost'
-PORT = 55556
+PORT = 5555
 
 FIGHT_TIME = 600
 timer = FIGHT_TIME
@@ -107,6 +107,7 @@ class Player(threading.Thread):
         self.mode = READY
         self.extra_socket = None
         self.update_timer_value = 0
+        self.immortal = True
     
     def add_extra_socket(self, extra_socket):
         self.extra_socket=extra_socket
@@ -140,7 +141,7 @@ class Player(threading.Thread):
         global alive_players_num
         self.hitted_delay = HITTED_DELAY
         if self.mode == IN_GAME:
-            if self.health > 0:
+            if self.health > 0 and not self.immortal:
                 self.health -= 5
                 self.action = HITTED
             if self.health < 1 and self.action != DEAD:
@@ -208,7 +209,6 @@ class Player(threading.Thread):
         player_connected = True
         while player_connected:
             self.set_start()
-            #say(f'ready!')
             start_state = {'current_player_id' : self.id}
             start_state[id] = (player.dir,
                                player.rect.center_x, 
@@ -216,18 +216,6 @@ class Player(threading.Thread):
                                player.rect.width,
                                player.rect.height,
                                )
-            #global connected_players_num, alive_players_num, max_players_num, game_started, timer
-          #  while connected_players_num < 2:
-           #     print(connected_players_num, 'кол-во игроков')
-            #    time.sleep(1)
-            #for id, player in players.items():
-                #if player:
-                    #start_state[id] = (player.dir,
-                     #                  player.rect.center_x, 
-                      #                 player.rect.center_y, 
-                      #                 player.rect.width,
-                      #                 player.rect.height,
-                       #                )
             send(start_state, self.socket)
             self.wait_for_extra_socket()
             self.say(f'start state: {start_state}')
@@ -301,10 +289,15 @@ class Ring(threading.Thread):
     def start_game(self, ):
         self.game_started = True
     
+    def enable_players_immortal(self, enable=True):
+        for player in self.players:
+            player.immortal = enable
+    
     def run(self, ):
         self.say("referee started!")
         while True:
             self.waiting_for_players()
+            self.enable_players_immortal(False)
             self.say('game started!')
             self.timer = self.playing_time
             while not waiting_players() and timer > 0:              #TODO разобраться с waiting_players()
@@ -317,6 +310,7 @@ class Ring(threading.Thread):
             self.alive_players_num = 0
             self.max_players_num = 0
             self.say('game over!')
+            self.enable_players_immortal()
             print()
     
     def get_game_state(self, update_timer=False):
@@ -372,19 +366,6 @@ def recieve(client_socket,):
     finally:
         return data
 
-def get_game_state():
-    global players, timer, recent_time
-    game_state = {}
-    for id, player in players.items():
-        if player:
-            game_state[id] = player.get_self_state()
-    if timer != recent_time:
-        game_state['timer'] = timer
-        recent_time = timer
-    else:
-        game_state['timer'] = None
-    return game_state
-
 @to_log
 def choice_waiting(player):
     send('connected', player.socket)
@@ -392,59 +373,6 @@ def choice_waiting(player):
     log.info(f'player {player.id} chose to {ring_name}')        #TODO обработать ошибку соединения
     if ring_name in ring.keys():
         rings(ring_name).add_player(player)
-
-@to_log
-def threaded_player(current_player):
-    log.debug(f'Игрок создан с id : {current_player.id}')
-    player_connected = True
-    while player_connected:
-        current_player.set_start()
-        log.info(f'Player {current_player.id} is ready!')
-        start_state = {'current_player_id' : current_player.id}
-        global connected_players_num, alive_players_num, max_players_num, game_started, timer
-      #  while connected_players_num < 2:
-       #     print(connected_players_num, 'кол-во игроков')
-        #    time.sleep(1)
-        for id, player in players.items():
-            if player:
-                start_state[id] = (player.dir,
-                                   player.rect.center_x, 
-                                   player.rect.center_y, 
-                                   player.rect.width,
-                                   player.rect.height,
-                                   )
-        send(start_state, current_player.socket)
-        log.debug(f'player id: {current_player.id} start state: {start_state}')
-        ring_number = recieve(current_player.socket)   #ring_number ЭТО СТРОКА  # TODO сделать цикл try except
-        log.debug(f'player {current_player.id} выбрал ринг на {ring_number} игрока')
-        ring = rings.get(ring_number)
-        ring.add_player(current_player)
-        ring.start_game()
-        alive_players_num += 1
-        max_players_num += 1
-        game_started = True
-        log.debug(f'Player {current_player.id}: start main cycle. alive_players_num: {alive_players_num}, max_players_num: {max_players_num}')
-        while True:                                                    #главный цикл игры
-            options = recieve(current_player.socket)
-            current_player.mode = IN_GAME
-            if options == ERROR:
-                log.error(f'Потерянно соеденение с : {current_player.id} игрок отключился')
-                alive_players_num -= 1
-                player_connected = False
-                break
-            current_player.apply_options(options)
-            send(get_game_state(self.update_timer_value), current_player.socket)
-            if alive_players_num < 2 and max_players_num > 1:
-                log.info(f'GAME OVER {current_player.id}')
-                log.debug(f'{max_players_num} max_players_num')
-                log.debug(f'{alive_players_num} alive_players_num')
-                current_player.socket.recv(1024)
-             #   players_state = 'finish'
-                max_players_num = 0
-                alive_players_num = 0
-                send('finish', current_player.socket)
-                break
-    remove_player(current_player.id)
 
 ring2 = Ring(2)
 ring3 = Ring(3)
