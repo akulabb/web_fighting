@@ -210,7 +210,7 @@ class Player(threading.Thread):
         while player_connected:
             self.set_start()
             start_state = {'current_player_id' : self.id}
-            start_state[id] = (player.dir,
+            start_state[self.id] = (player.dir,
                                player.rect.center_x, 
                                player.rect.center_y, 
                                player.rect.width,
@@ -223,7 +223,6 @@ class Player(threading.Thread):
             self.say(f' выбрал ринг на {ring_number} игрока')
             ring = rings.get(ring_number)
             ring.add_player(self)
-            ring.start_game()
             self.say(f'start main cycle.')
             while True:                                                    #главный цикл игры
                 options = recieve(self.socket)
@@ -277,17 +276,17 @@ class Ring(threading.Thread):
         self.players_num = players_num
         self.max_players_num = 0
         self.alive_players_num = 0
-        self.game_started = False
+        self.ring_enable = False
+        self.fight = False
         self.players = []
     
     def add_player(self, player):
-        self.alive_players_num += 1
-        self.max_players_num += 1
+        self.enable()
         self.players.append(player)
         self.say(f'It is new player on our ring! His name is {self.name}')           
     
-    def start_game(self, ):
-        self.game_started = True
+    def enable(self, enable=True):
+        self.ring_enable = enable
     
     def enable_players_immortal(self, enable=True):
         for player in self.players:
@@ -300,17 +299,24 @@ class Ring(threading.Thread):
             self.enable_players_immortal(False)
             self.say('game started!')
             self.timer = self.playing_time
-            while not waiting_players() and timer > 0:              #TODO разобраться с waiting_players()
+            alive_players = self.players_num
+            while self.timer > 0 and alive_players > 1:              #TODO разобраться с waiting_players()
+                alive_players = self.players_num
                 time.sleep(1)
                 self.timer -= 1
                 self.update_timer_value = True
                 for player in self.players:
                     player.update_timer_value = True
-            self.game_started = False
+                    if player.action == DEAD:
+                        alive_players -= 1
+            self.enable(False)
             self.alive_players_num = 0
             self.max_players_num = 0
             self.say('game over!')
             self.enable_players_immortal()
+            self.players.clear()
+            self.fight = False
+            print("ring clear")
             print()
     
     def get_game_state(self, update_timer=False):
@@ -330,7 +336,7 @@ class Ring(threading.Thread):
         log.info(f'ring on {self.players_num} players : {message}')
     
     def game_over(self):                        #TODO is game over 
-        pass
+        return not self.ring_enable
 
 def waiting_players():
     result = True
@@ -340,7 +346,7 @@ def waiting_players():
     return result
 
 @to_log
-def remove_player(id):
+def remove_player(id):                                              #TODO найти на каком ринге игрок и удалить его оттуда(если есть)
     global connected_players_num
     players[id].socket.close()
     players[id] = None

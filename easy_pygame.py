@@ -162,9 +162,11 @@ class Label():
         labels[self._id] = self
         
     def show(self):
+        print(f"showing label with id {self._id}")
         labels[self._id] = self
             
     def hide(self):
+        print(f"hiding label with id {self._id}")
         labels.pop(self._id)
         
     def place_to(self, place, center=False):
