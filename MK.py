@@ -221,7 +221,7 @@ def fight():
             print('FINISHING')
             print(fighters)
             for fighter in fighters:
-                print(f'hiding fighter {fighter.id}')          #TODO в ринге на троих два игрока с одинаковым id
+                print(f'hiding fighter {fighter.id}')          
                 fighter.hide()
             print('Раунд окончен.')
             return None
@@ -255,6 +255,15 @@ def fight():
                     print('new_fighter_state:', new_fighter_state)
                     new_fighters[fighter_id] = new_fighter_state
             create_fighters(new_fighters)
+        elif len(game_state) < len(fighters):                     # удаление пропавших игроков
+            fighter_to_del = None
+            id_to_del = None
+            for fighter in fighters:
+                if fighter.id not in game_state.keys():
+                    fighter_to_del = fighters.index(fighter)
+                    id_to_del = fighter.id
+            fighters.pop(fighter_to_del)
+            log.debug(f'deleted fighter {id_to_del}')
         update()
     print('end')
     

@@ -27,7 +27,7 @@ HITTED = 4
 DEAD = 5
 
 LOGGING_LEVEL = mainlog.DEBUG
-NOT_LOGGING_FUNCTION = ('sub_func',)
+NOT_LOGGING_FUNCTION = ('sub_func', 'stay', 'set_skin', 'move_to', '_get_surf', 'show', 'apply_game_state', 'set_value')
 
 mainlog.basicConfig(level=LOGGING_LEVEL,
                 format='%(levelname)s %(message)s')

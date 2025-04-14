@@ -204,6 +204,17 @@ class Player(threading.Thread):
         while not self.extra_socket:
             time.sleep(0.25)
     
+    def watch_rings(self, ):
+        self.say(f'watch rings started')
+        prev_rings_states = []
+        while self.mode == READY:
+            self.say(f'self.mode == READY')
+            rings_states = [ring.fight for ring in rings.values()]
+            if prev_rings_states != rings_states:
+                prev_rings_states = rings_states
+                send(rings_states, self.extra_socket)
+            time.sleep(0.1)
+    
     def run(self): 
         self.say(f'Игрок создан')
         player_connected = True
@@ -219,15 +230,17 @@ class Player(threading.Thread):
             send(start_state, self.socket)
             self.wait_for_extra_socket()
             self.say(f'start state: {start_state}')
+            threading.Thread(target=self.watch_rings, args=(), daemon=True).start()
             ring_number = recieve(self.socket)   #ring_number ЭТО СТРОКА  # TODO сделать цикл try except
             self.say(f' выбрал ринг на {ring_number} игрока')
             ring = rings.get(ring_number)
             ring.add_player(self)
             self.say(f'start main cycle.')
+            self.mode = IN_GAME
             while True:                                                    #главный цикл игры
                 options = recieve(self.socket)
                 self.mode = IN_GAME
-                if options == ERROR:
+                #if options == ERROR:
                     self.say(f'Потерянно соеденение, player disconnected')
                     player_connected = False
                     break
@@ -269,7 +282,7 @@ class Rect:
 
 
 class Ring(threading.Thread):
-    def __init__(self, players_num, playing_time=10):
+    def __init__(self, players_num, playing_time=100):
         super().__init__()
         self.playing_time = playing_time
         self.timer = self.playing_time
@@ -283,7 +296,16 @@ class Ring(threading.Thread):
     def add_player(self, player):
         self.enable()
         self.players.append(player)
-        self.say(f'It is new player on our ring! His name is {self.name}')           
+        self.say(f'It is new player on our ring! His name is {self.name}')
+    
+    def remove_player(self, id):
+        player_to_del = None
+        for player in self.players:
+           if player.id == id:
+                player_to_del = player
+        if player_to_del != None:
+            self.players.pop(self.players.index(player_to_del))
+            self.say(f'player {player_to_del.id} was removed')
     
     def enable(self, enable=True):
         self.ring_enable = enable
@@ -347,7 +369,9 @@ def waiting_players():
 
 @to_log
 def remove_player(id):                                              #TODO найти на каком ринге игрок и удалить его оттуда(если есть)
-    global connected_players_num
+    global connected_players_num, rings
+    for ring in rings.values():
+        ring.remove_player(id)
     players[id].socket.close()
     players[id] = None
     log.debug(f'игрок закончился с id : {id}')
