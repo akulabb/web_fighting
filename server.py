@@ -220,7 +220,9 @@ class Player(threading.Thread):
         player_connected = True
         while player_connected:
             self.set_start()
-            start_state = {'current_player_id' : self.id}
+            start_state = {'current_player_id' : self.id,
+                           'rings' : tuple(rings.keys()),
+                           }
             start_state[self.id] = (player.dir,
                                player.rect.center_x, 
                                player.rect.center_y, 
@@ -240,7 +242,7 @@ class Player(threading.Thread):
             while True:                                                    #главный цикл игры
                 options = recieve(self.socket)
                 self.mode = IN_GAME
-                #if options == ERROR:
+                if options == ERROR:
                     self.say(f'Потерянно соеденение, player disconnected')
                     player_connected = False
                     break
@@ -320,6 +322,7 @@ class Ring(threading.Thread):
             self.waiting_for_players()
             self.enable_players_immortal(False)
             self.say('game started!')
+            self.fight = True
             self.timer = self.playing_time
             alive_players = self.players_num
             while self.timer > 0 and alive_players > 1:              #TODO разобраться с waiting_players()

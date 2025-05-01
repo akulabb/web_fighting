@@ -59,6 +59,7 @@ class Menu():
         self.button_img_paths = button_img_paths
         self.button_order = button_order
         self.button_margin = button_margin
+        self.button_size = button_size
         self.screen = screen
         self.server = server
         if self.button_order == 'v':
@@ -71,18 +72,25 @@ class Menu():
         self.add_buttons(button_titles)
                 
     def add_buttons(self, button_titles):
+        print('add buttons')
         for title in button_titles:
             button_pos = (self.button_x, self.button_y)
-            self.buttons.append(Button(self.button_img_paths, 
+            button = Button(self.button_img_paths, 
                                        title,
                                        button_pos,
-                                       w=button_size[0],
-                                       h=button_size[1],
-                                       ))
-            if self.button_order == 'v':
-                self.button_y += button_size[1] + self.button_margin
-            else:
-                self.button_x += button_size[0] + self.button_margin
+                                       w=self.button_size[0],
+                                       h=self.button_size[1],
+                                       )
+            self.buttons.insert(0, button)
+            self.buttons.reverse()
+            print(f'button created {title}')
+            for button in self.buttons:
+                xpos = button.pos[0] + self.button_size[0] + self.button_margin
+                ypos = button.pos[1] + self.button_size[1] + self.button_margin
+                if self.button_order == 'v':
+                    button.move_to((self.button_x, ypos))
+                else:
+                    button.move_to((xpos, self.button_y))
     
     def get_choice (self, labels=[]):
         choice = ''
@@ -114,14 +122,18 @@ class Menu():
         return choice
     
     def update_buttons_state(self, ):
-        rings_states = self.server.recv(self.server.extra_socket)
-        for ring_state in rings_states:
-            button_state = not ring_state
+        
+            rings_states = self.server.recv(self.server.extra_socket)
+            for button, ring_state in zip(self.buttons, rings_states):
+                button_state = not ring_state
+                button.enable(button_state)
+    
     
     def enable_button(self, button_name, enable=True):
         for button in self.buttons:
             if button.text == button_name:
                 button.enable(enable)
+    
 
 
 #@log_class
@@ -151,6 +163,10 @@ class Button(epg.Sprite, epg.Label):
      #   else:
       #      self.set_skin(self.RELEASED)
       #      return False
+    
+    def move_to(self, position):
+        epg.Sprite.move_to(self, position)
+        epg.Label.place_to(self, position, center=True)
     
     def hide(self):
         epg.Sprite.hide(self)
@@ -194,7 +210,7 @@ def start_game():
     buttons_names = [f"Ринг на {ring}" for ring in rings]
     server.add_extra_socket(current_fighter_id)
     create_fighters(start_game_state, show=False)
-    menu.enable_button('играть')
+    menu.add_buttons(buttons_names)
 
 def get_str_time(int_time):
     seconds = int_time % 60
@@ -311,8 +327,6 @@ menu = Menu(screen,
             )
 
 while True:
-    menu.enable_button('играть', False)
-
     threading.Thread(target=start_game).start()
     
     print(f'start menu')
