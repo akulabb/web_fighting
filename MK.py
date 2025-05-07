@@ -74,6 +74,15 @@ class Menu():
     def add_buttons(self, button_titles):
         print('add buttons')
         for title in button_titles:
+            for button in self.buttons:
+                if self.button_order == 'v':
+                    ypos = button.pos[1] + self.button_size[1] + self.button_margin
+                    button.move_to((self.button_x, ypos))
+                else:
+                    xpos = button.pos[0] + self.button_size[0] + self.button_margin
+                    print(f"кнопка {button.text} сдвигается в {xpos}")
+                    button.move_to((xpos, self.button_y))
+            print(f'button creating {title}')
             button_pos = (self.button_x, self.button_y)
             button = Button(self.button_img_paths, 
                                        title,
@@ -82,15 +91,6 @@ class Menu():
                                        h=self.button_size[1],
                                        )
             self.buttons.insert(0, button)
-            self.buttons.reverse()
-            print(f'button created {title}')
-            for button in self.buttons:
-                xpos = button.pos[0] + self.button_size[0] + self.button_margin
-                ypos = button.pos[1] + self.button_size[1] + self.button_margin
-                if self.button_order == 'v':
-                    button.move_to((self.button_x, ypos))
-                else:
-                    button.move_to((xpos, self.button_y))
     
     def get_choice (self, labels=[]):
         choice = ''
@@ -197,19 +197,25 @@ server = connection.Connection(SERVER, PORT)
 fighters = []
 
 current_fighter_id = 0
+rings = {}
 
 ground_level = SCREEN_HEIGHT - 254
 
 @to_log
-def start_game():
+def initialize():
     start_game_state = server.get_start()
     print(f'start game state:{start_game_state}')
     global current_fighter_id
     current_fighter_id = start_game_state.pop('current_player_id')
     rings = start_game_state.pop('rings')
+    current_fighter_start_state = 
+
+@to_log
+def start_game():
     buttons_names = [f"Ринг на {ring}" for ring in rings]
     server.add_extra_socket(current_fighter_id)
     create_fighters(start_game_state, show=False)
+    buttons_names.reverse()
     menu.add_buttons(buttons_names)
 
 def get_str_time(int_time):
@@ -256,6 +262,7 @@ def fight():
                 print(f'hiding fighter {fighter.id}')          
                 fighter.hide()
             print('Раунд окончен.')
+            server.send('finish')
             return None
         print(fighters)
         for fighter in fighters:
@@ -326,9 +333,11 @@ menu = Menu(screen,
             button_margin=70,
             )
 
+
+
 while True:
-    threading.Thread(target=start_game).start()
-    
+    #threading.Thread(target=start_game).start()
+    start_game()
     print(f'start menu')
     choice = menu.get_choice()
 
@@ -347,4 +356,5 @@ while True:
         update()
         time.sleep(5)
         label_game_over.hide()
+#TODO закрыть сокеты перед завершением программы
 exit()

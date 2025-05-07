@@ -38,7 +38,7 @@ READY = 1
 IN_GAME = 0
 
 LOGGING_LEVEL = mainlog.DEBUG
-NOT_LOGGING_FUNCTION = ('apply_options', 'send_data', 'recieve', 'update', 'get_self_state', 'sub_func')
+NOT_LOGGING_FUNCTION = ('apply_options', 'send_data', 'recieve', 'update', 'get_self_state', 'sub_func', 'say')
 
 mainlog.basicConfig(level=LOGGING_LEVEL,
                 format='%(levelname)s %(message)s')
@@ -208,7 +208,7 @@ class Player(threading.Thread):
         self.say(f'watch rings started')
         prev_rings_states = []
         while self.mode == READY:
-            self.say(f'self.mode == READY')
+            #self.say(f'self.mode == READY')
             rings_states = [ring.fight for ring in rings.values()]
             if prev_rings_states != rings_states:
                 prev_rings_states = rings_states
@@ -218,20 +218,20 @@ class Player(threading.Thread):
     def run(self): 
         self.say(f'Игрок создан')
         player_connected = True
-        while player_connected:
-            self.set_start()
-            start_state = {'current_player_id' : self.id,
-                           'rings' : tuple(rings.keys()),
-                           }
-            start_state[self.id] = (player.dir,
+        self.set_start()
+        start_state = {'current_player_id' : self.id,
+                       'rings' : tuple(rings.keys()),
+                       }
+        start_state[self.id] = (player.dir,
                                player.rect.center_x, 
                                player.rect.center_y, 
                                player.rect.width,
                                player.rect.height,
                                )
-            send(start_state, self.socket)
-            self.wait_for_extra_socket()
-            self.say(f'start state: {start_state}')
+        send(start_state, self.socket)
+        self.wait_for_extra_socket()
+        self.say(f'start state: {start_state}')
+        while player_connected:
             threading.Thread(target=self.watch_rings, args=(), daemon=True).start()
             ring_number = recieve(self.socket)   #ring_number ЭТО СТРОКА  # TODO сделать цикл try except
             self.say(f' выбрал ринг на {ring_number} игрока')
@@ -247,11 +247,19 @@ class Player(threading.Thread):
                     player_connected = False
                     break
                 self.apply_options(options)
-                send(ring.get_game_state(self.update_timer_value), self.socket)
+                gm_state = ring.get_game_state(self.update_timer_value)
+                print(gm_state)
+                send(gm_state, self.socket)
+                #send(ring.get_game_state(self.update_timer_value), self.socket)
                 if ring.game_over():
                     self.say('GAME OVER')
                     self.socket.recv(1024)
+                    self.say('sending finish')
                     send('finish', self.socket)
+                    self.say('recieving finish confirmation')
+                    confirm = self.socket.recv(1024)
+                    self.say(f'confirm : {confirm}')
+                    self.mode = READY
                     break
         remove_player(self.id)
 
@@ -441,3 +449,5 @@ while True:
     else:
         print('Неправильный тип подключения!')
             
+
+

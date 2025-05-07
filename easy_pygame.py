@@ -149,6 +149,7 @@ class Label():
         self.place = (x, y)
         self.place_to((x, y), center=center)
         if show:
+            print(f'epg показывает label {self._id}')
             labels[self._id] = self
             update()  
         
