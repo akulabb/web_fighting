@@ -19,6 +19,7 @@ FPS = 30
 BALL_IMAGE_PATH = 'photos/ball.png'
 EARTH_IMAGE_PATH = 'photos/earth.png'
 BACK_IMAGE_PATH = 'photos/back.png'
+CONNECTING_IMAGE_PATH = 'photos/back.jpg'
 
 HEIGHT_HALF = int(SCREEN_HEIGHT/2)
 WIDTH_HALF = int(SCREEN_WIDTH/2)
@@ -69,9 +70,9 @@ class Menu():
             self.button_x = self.button_margin + int(button_size[0] / 2)
             self.button_y = int(SCREEN_HEIGHT / 2)
         self.buttons = []
-        self.add_buttons(button_titles)
+        self.add_buttons(button_titles, show=False)
                 
-    def add_buttons(self, button_titles):
+    def add_buttons(self, button_titles, show=True):
         print('add buttons')
         for title in button_titles:
             for button in self.buttons:
@@ -89,6 +90,7 @@ class Menu():
                                        button_pos,
                                        w=self.button_size[0],
                                        h=self.button_size[1],
+                                       show=show
                                        )
             self.buttons.insert(0, button)
     
@@ -141,9 +143,9 @@ class Button(epg.Sprite, epg.Label):
     RELEASED = 0
     PRESSED = 1
     DISABLED = 2
-    def __init__(self, button_image_paths, text, pos, w=50, h=50, savescale=False):
-        epg.Sprite.__init__(self, button_image_paths[0], pos, w=w, h=h, savescale=savescale)
-        epg.Label.__init__(self, text=text, x=pos[0], y=pos[1], center=True)
+    def __init__(self, button_image_paths, text, pos, w=50, h=50, savescale=False, show=True):
+        epg.Sprite.__init__(self, button_image_paths[0], pos, w=w, h=h, savescale=savescale, show=show)
+        epg.Label.__init__(self, text=text, x=pos[0], y=pos[1], center=True, show=show)
         self.skin_index = self.RELEASED
         self.animation_list = []
         self.animation_list.append(self.load_img(img=button_image_paths[self.RELEASED]))
@@ -190,33 +192,39 @@ def update():
     epg.tick(FPS)
     
 
-screen = epg.Screen(EARTH_IMAGE_PATH, width=SCREEN_WIDTH, height=SCREEN_HEIGHT)
-
-server = connection.Connection(SERVER, PORT)
+screen = epg.Screen(CONNECTING_IMAGE_PATH, width=SCREEN_WIDTH, height=SCREEN_HEIGHT)
 
 fighters = []
 
 current_fighter_id = 0
-rings = {}
-
+buttons_names = []
+current_fighter_config = ()
+server = connection.Connection(SERVER, PORT)
 ground_level = SCREEN_HEIGHT - 254
 
 @to_log
 def initialize():
+    global current_fighter_id, buttons_names, current_fighter_start_state, server
+    connected = False
+    while not connected:
+        try:
+            server.connect_main_socket()
+            connected = True
+        except ConnectionRefusedError:
+            log.error("Connection failed")
+            time.sleep(1)
+        update()
+    #for button in menu.buttons:
+     #   button.show()
+    screen.set_background(BACK_IMAGE_PATH)
     start_game_state = server.get_start()
     print(f'start game state:{start_game_state}')
-    global current_fighter_id
-    current_fighter_id = start_game_state.pop('current_player_id')
-    rings = start_game_state.pop('rings')
-    current_fighter_start_state = 
-
-@to_log
-def start_game():
+    current_fighter_id, current_fighter_config, rings = start_game_state
+    server.connect_extra_socket(current_fighter_id)
     buttons_names = [f"Ринг на {ring}" for ring in rings]
-    server.add_extra_socket(current_fighter_id)
-    create_fighters(start_game_state, show=False)
     buttons_names.reverse()
     menu.add_buttons(buttons_names)
+    create_fighters({current_fighter_id : current_fighter_config}, show=False)
 
 def get_str_time(int_time):
     seconds = int_time % 60
@@ -333,14 +341,13 @@ menu = Menu(screen,
             button_margin=70,
             )
 
+initialize()
 
 
 while True:
-    #threading.Thread(target=start_game).start()
-    start_game()
     print(f'start menu')
     choice = menu.get_choice()
-
+    
     if choice == 'выйти':
         break
 

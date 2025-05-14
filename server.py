@@ -222,12 +222,16 @@ class Player(threading.Thread):
         start_state = {'current_player_id' : self.id,
                        'rings' : tuple(rings.keys()),
                        }
-        start_state[self.id] = (player.dir,
-                               player.rect.center_x, 
-                               player.rect.center_y, 
-                               player.rect.width,
-                               player.rect.height,
-                               )
+        start_config =(self.dir,
+                       self.rect.center_x, 
+                       self.rect.center_y, 
+                       self.rect.width,
+                       self.rect.height,
+                       )
+        start_state = (self.id,
+                       start_config,
+                       tuple(rings.keys()),
+                       )
         send(start_state, self.socket)
         self.wait_for_extra_socket()
         self.say(f'start state: {start_state}')
