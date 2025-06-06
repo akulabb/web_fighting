@@ -42,7 +42,7 @@ BUTTON_PRESSED_IMAGE_PATH = 'photos/pressed.jpeg'
 BUTTON_DISABLED_IMAGE_PATH = 'photos/disabled.jpeg'
 
 SERVER = 'localhost'
-PORT = 5555
+PORT = 55555
 
 
 #@log_class
@@ -253,6 +253,8 @@ def create_fighters(game_state, show=True):
  #   return fighters
 @to_log
 def fight():
+    screen.set_background(EARTH_IMAGE_PATH)
+    label_timer.show()
     print('файтеры', len(fighters))
     while True:
         game_state = {}
@@ -312,6 +314,7 @@ def fight():
             fighters.pop(fighter_to_del)
             log.debug(f'deleted fighter {id_to_del}')
         update()
+    label_timer.hide()
     print('end')
     
 label_game_over = epg.Label(text='GAME OVER',
@@ -344,7 +347,7 @@ menu = Menu(screen,
 initialize()
 
 
-while True:
+while True:     # TODO крутить пока server.connected 
     print(f'start menu')
     choice = menu.get_choice()
     
@@ -354,8 +357,6 @@ while True:
     else:
         ring_num = choice[-1]
         server.send(ring_num)
-        screen.set_background(EARTH_IMAGE_PATH)
-        label_timer.show()
         fight()
         label_timer.hide()
         fighters = []

@@ -19,7 +19,7 @@ START_POSITIONS = (int(SCREEN_WIDTH / 5),
                    )
 
 SERVER = 'localhost'
-PORT = 5555
+PORT = 55555
 
 FIGHT_TIME = 600
 timer = FIGHT_TIME
@@ -237,9 +237,14 @@ class Player(threading.Thread):
         self.say(f'start state: {start_state}')
         while player_connected:
             threading.Thread(target=self.watch_rings, args=(), daemon=True).start()
-            ring_number = recieve(self.socket)   #ring_number ЭТО СТРОКА  # TODO сделать цикл try except
+            try:
+                ring_number = recieve(self.socket)
+                ring = rings[ring_number]
+            except Exception as err:
+                self.say(f"Wrong ring number : {ring_number}, Disconnecting player")
+                player_connected = false
+                continue
             self.say(f' выбрал ринг на {ring_number} игрока')
-            ring = rings.get(ring_number)
             ring.add_player(self)
             self.say(f'start main cycle.')
             self.mode = IN_GAME
@@ -252,7 +257,7 @@ class Player(threading.Thread):
                     break
                 self.apply_options(options)
                 gm_state = ring.get_game_state(self.update_timer_value)
-                print(gm_state)
+                #print(gm_state)
                 send(gm_state, self.socket)
                 #send(ring.get_game_state(self.update_timer_value), self.socket)
                 if ring.game_over():
@@ -306,20 +311,31 @@ class Ring(threading.Thread):
         self.ring_enable = False
         self.fight = False
         self.players = []
+        self.winners = []
     
     def add_player(self, player):
         self.enable()
         self.players.append(player)
         self.say(f'It is new player on our ring! His name is {self.name}')
     
-    def remove_player(self, id):
-        player_to_del = None
-        for player in self.players:
+    def _remove_player_from(self, id, container):
+        index = None
+        for player in container:
            if player.id == id:
-                player_to_del = player
-        if player_to_del != None:
-            self.players.pop(self.players.index(player_to_del))
-            self.say(f'player {player_to_del.id} was removed')
+                index = container.index(player)
+        if index != None:
+            container.pop(index)
+        return index
+    
+    def remove_player(self, id):
+        remove = False
+        if self._remove_player_from(id, self.players):
+            self.say(f'player {id} was removed from players')
+            remove = True
+        if self._remove_player_from(id, self.winners):
+            self.say(f'player {id} was removed from winners')
+            remove = True
+        return remove
     
     def enable(self, enable=True):
         self.ring_enable = enable
@@ -346,6 +362,17 @@ class Ring(threading.Thread):
                     player.update_timer_value = True
                     if player.action == DEAD:
                         alive_players -= 1
+            self.winners = self.get_winners()
+            if alive_players > 1:                                                    #timer is over
+                new_winners = []
+                max_health = self.winners[0].health
+                for winner in self.winners:
+                    if winner.health > max_health:
+                        new_winners = [winner]
+                    elif winner.health == max_health:
+                        new_winners.append(winner)
+                self.winners = new_winners
+                print(f"new_winners : {new_winners}")
             self.enable(False)
             self.alive_players_num = 0
             self.max_players_num = 0
@@ -355,6 +382,10 @@ class Ring(threading.Thread):
             self.fight = False
             print("ring clear")
             print()
+    
+    def get_winners(self, ): 
+        self.winners = [player for player in self.players if player.action != DEAD]
+        return self.winners
     
     def get_game_state(self, update_timer=False):
         game_state = {"timer" : None}
@@ -372,8 +403,9 @@ class Ring(threading.Thread):
     def say(self, message):
         log.info(f'ring on {self.players_num} players : {message}')
     
-    def game_over(self):                        #TODO is game over 
-        return not self.ring_enable
+    def game_over(self):                                #TODO is game over 
+        if not self.ring_enable:
+            return self.winners
 
 def waiting_players():
     result = True
