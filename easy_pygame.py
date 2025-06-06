@@ -103,10 +103,10 @@ def pressed_key(key):
 
 class Screen():
     def __init__(self, background=WHITE,
-                       width=WIDTH,
-                       height=HEIGHT,
-                       caption='EasyPyGame'
-                       ):
+                 width=WIDTH,
+                 height=HEIGHT,
+                 caption='EasyPyGame'
+                ):
         self.width = width
         self.height = height
         self.background = background
@@ -149,6 +149,7 @@ class Label():
         self.place = (x, y)
         self.place_to((x, y), center=center)
         if show:
+            print(f'epg показывает label {self._id}')
             labels[self._id] = self
             update()  
         
@@ -162,9 +163,11 @@ class Label():
         labels[self._id] = self
         
     def show(self):
+        print(f"showing label with id {self._id}")
         labels[self._id] = self
             
     def hide(self):
+        print(f"hiding label with id {self._id}")
         labels.pop(self._id)
         
     def place_to(self, place, center=False):
@@ -198,7 +201,7 @@ class Sprite(pygame.sprite.Sprite):
         if AUTO_UPDATE:
             update()
     
-    def load_img(self, img=GREEN, savescale=True, full_path=False):
+    def load_img(self, img=GREEN, savescale=True, full_path=False, colorkey=WHITE):
         w, h = self.size
         if type(img) == str:
             if not full_path:
@@ -209,7 +212,7 @@ class Sprite(pygame.sprite.Sprite):
                 h = int(image.get_height() * scale)
                 self.size = w, h
             image = pygame.transform.scale(image, (w, h))
-            image.set_colorkey(WHITE)
+            image.set_colorkey(colorkey)
         else:
             image = pygame.Surface((w, h))
             image.fill(img)
